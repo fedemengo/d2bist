@@ -14,7 +14,13 @@ import (
 
 type bit uint8
 
+var (
+	outputAsString = false
+	printInfo      = false
+)
+
 func main() {
+
 	app := &cli.App{
 		EnableBashCompletion: true,
 		Name:                 "biner",
@@ -27,8 +33,22 @@ func main() {
 				Action:  decode,
 			},
 			{
-				Name:        "encode",
-				Aliases:     []string{"e"},
+				Name:    "encode",
+				Aliases: []string{"e"},
+				Flags: []cli.Flag{
+					&cli.BoolFlag{
+						Name:        "string",
+						Aliases:     []string{"s"},
+						Usage:       "the output will be a utf8 string of 0s and 1s",
+						Destination: &outputAsString,
+					},
+					&cli.BoolFlag{
+						Name:        "info",
+						Aliases:     []string{"i"},
+						Usage:       "output distribution information",
+						Destination: &printInfo,
+					},
+				},
 				Description: "encode a binary string to a binary file",
 				Action:      encode,
 			},
@@ -144,11 +164,30 @@ func binaryStringToWriter(w io.Writer, bits ...bit) {
 }
 
 func printAsBinaryString(bits ...bit) {
-	if isatty.IsTerminal(os.Stdout.Fd()) {
+	bstr := humanReadableBinStr(bits...)
+	bstr = strings.ReplaceAll(bstr, ".", "")
+	if outputAsString {
+		fmt.Println(bstr)
+	} else if isatty.IsTerminal(os.Stdout.Fd()) {
 		bstr := humanReadableBinStr(bits...)
 		fmt.Println(bstr)
 	} else {
 		binaryStringToWriter(os.Stdout, bits...)
+	}
+
+	if printInfo {
+		zeroC, oneC := 0, 0
+		for _, c := range bstr {
+			if c == '0' {
+				zeroC++
+			} else {
+				oneC++
+			}
+		}
+		fmt.Printf(`
+0: %d
+1: %d
+`, zeroC, oneC)
 	}
 }
 
