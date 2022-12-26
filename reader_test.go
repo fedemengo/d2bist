@@ -2,23 +2,12 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-func TestIntBitsToByte(t *testing.T) {
-	a := assert.New(t)
-	for c := 0; c < 256; c++ {
-		bits := byteToBits(byte(c))
-		b := bitsToByte(bits)
-
-		a.Equal(c, int(b))
-	}
-}
 
 func TestBytesToBit(t *testing.T) {
 	testCases := []struct {
@@ -47,7 +36,6 @@ text`,
 			bits, err := bitsFromReader(reader)
 			r.NoError(err)
 
-			fmt.Println(len(tc.expectedBits))
 			a.Equal(tc.expectedBits, bits)
 		})
 	}
@@ -81,24 +69,19 @@ text`,
 			a, r := assert.New(tt), require.New(tt)
 
 			reader := bytes.NewReader([]byte(tc.data))
-
 			bits, err := bitsFromReader(reader)
 			r.NoError(err)
 
 			s := ""
 			buf := bytes.NewBufferString(s)
-			binaryStringToWriter(buf, bits...)
-
+			binaryStringToWriter(buf, bits)
 			bstr := buf.String()
 
 			a.Equal(tc.data, bstr)
 
-			hstr := humanReadableBinStr(bits...)
-			hstr = strings.ReplaceAll(hstr, ".", "")
-
+			hstr := bitsToString(bits)
 			expectedBStr := strings.ReplaceAll(tc.expectedString, " ", "")
 
-			fmt.Println(len(expectedBStr))
 			a.Equal(expectedBStr, hstr)
 		})
 	}
