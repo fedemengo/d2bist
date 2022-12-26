@@ -5,11 +5,12 @@ import (
 	"log"
 	"os"
 
+	"github.com/mattn/go-isatty"
+	"github.com/urfave/cli/v2"
+
 	"github.com/fedemengo/f2bist/internal/engine"
 	"github.com/fedemengo/f2bist/internal/io"
 	"github.com/fedemengo/f2bist/internal/types"
-	"github.com/mattn/go-isatty"
-	"github.com/urfave/cli/v2"
 )
 
 var (
@@ -70,9 +71,9 @@ func decode(ctx *cli.Context) error {
 		return err
 	}
 
-	engine.AnalizeBits(bits)
-
 	outputBinaryString(bits)
+
+	outputStats(bits)
 
 	return nil
 }
@@ -84,6 +85,23 @@ func outputBinaryString(bits []types.Bit) {
 		fmt.Println(io.BitsToString(bits, io.WithSep(' ')))
 	} else {
 		io.BitsToWriter(os.Stdout, bits)
+	}
+}
+
+func outputStats(bits []types.Bit) {
+	stats := engine.AnalizeBits(bits)
+	fmt.Fprintf(os.Stderr, `
+bits: %d
+
+0: %d
+1: %d
+`, stats.SizeBits, stats.ZeroCount, stats.OneCount)
+
+	fmt.Fprintln(os.Stderr)
+
+	for i := 1; i <= stats.MaxStringLen; i++ {
+		zc, oc := stats.ZeroStrings[i], stats.OneStrings[i]
+		fmt.Fprintf(os.Stderr, "l%02d: 0: %9d - 1: %9d | ratio: %.5f\n", i, zc, oc, float64(zc)/float64(oc))
 	}
 }
 
