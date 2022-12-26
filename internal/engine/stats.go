@@ -51,25 +51,33 @@ func AnalizeBits(bits []types.Bit) *Stats {
 			zeroC++
 
 			zeroL++
+			if oneL > 0 && oneL < maxStringLen {
+				stats.OneStrings[oneL]++
+			}
 			oneL = 0
 		case 1:
 			oneC++
 
 			oneL++
+			if zeroL > 0 && zeroL < maxStringLen {
+				stats.ZeroStrings[zeroL]++
+			}
 			zeroL = 0
 		default:
-			log.Fatalf("digits %c should not be here", c)
-		}
-
-		if zeroL > 0 && zeroL < maxStringLen {
-			stats.ZeroStrings[zeroL]++
-		}
-		if oneL > 0 && oneL < maxStringLen {
-			stats.OneStrings[oneL]++
+			log.Fatalf("digit %c should not be here", c)
 		}
 
 		stats.MaxStringLen = min(max(stats.MaxStringLen, max(zeroL, oneL)), maxStringLen)
 	}
+
+	if zeroL > 0 && zeroL < maxStringLen {
+		stats.ZeroStrings[zeroL]++
+	}
+	if oneL > 0 && oneL < maxStringLen {
+		stats.OneStrings[oneL]++
+	}
+
+	stats.MaxStringLen = min(max(stats.MaxStringLen, max(zeroL, oneL)), maxStringLen)
 
 	stats.ZeroCount = zeroC
 	stats.OneCount = oneC

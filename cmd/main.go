@@ -71,9 +71,8 @@ func decode(ctx *cli.Context) error {
 		return err
 	}
 
-	outputBinaryString(bits)
-
 	outputStats(bits)
+	outputBinaryString(bits)
 
 	return nil
 }
@@ -103,6 +102,7 @@ bits: %d
 		zc, oc := stats.ZeroStrings[i], stats.OneStrings[i]
 		fmt.Fprintf(os.Stderr, "l%02d: 0: %9d - 1: %9d | ratio: %.5f\n", i, zc, oc, float64(zc)/float64(oc))
 	}
+	fmt.Fprintln(os.Stderr)
 }
 
 func encode(ctx *cli.Context) error {
