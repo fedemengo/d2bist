@@ -56,8 +56,12 @@ func BitsToString(bits []types.Bit, opts ...Op) string {
 
 func BitsToWriter(w io.Writer, bits []types.Bit) {
 	for i := 0; i < len(bits)/8; i++ {
+		start := i * 8
+		end := min((i+1)*8, len(bits))
+
 		byteVal := [8]types.Bit{}
-		copy(byteVal[:], bits[i*8:min((i+1)*8, len(bits)-1)])
+		copy(byteVal[:], bits[start:end])
+
 		w.Write([]byte{engine.BitsToByte(byteVal)})
 	}
 }

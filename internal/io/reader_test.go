@@ -5,9 +5,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fedemengo/f2bist/internal/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/fedemengo/f2bist/internal/types"
 )
 
 func TestBytesToBit(t *testing.T) {
@@ -34,7 +35,7 @@ text`,
 
 			reader := bytes.NewReader([]byte(tc.data))
 
-			bits, err := BitsFromReader(reader)
+			bits, err := BitsFromByteReader(reader)
 			r.NoError(err)
 
 			a.Equal(tc.expectedBits, bits)
@@ -70,7 +71,7 @@ text`,
 			a, r := assert.New(tt), require.New(tt)
 
 			reader := bytes.NewReader([]byte(tc.data))
-			bits, err := BitsFromReader(reader)
+			bits, err := BitsFromByteReader(reader)
 			r.NoError(err)
 
 			s := ""
@@ -86,4 +87,32 @@ text`,
 			a.Equal(expectedBStr, hstr)
 		})
 	}
+}
+
+func TestBitStringToBit(t *testing.T) {
+	testCases := []struct {
+		name         string
+		data         string
+		expectedBits []types.Bit
+	}{
+		{
+			name:         "two characters",
+			data:         "0110100001100101",
+			expectedBits: []types.Bit{0, 1, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 1},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(tt *testing.T) {
+			a, r := assert.New(tt), require.New(tt)
+
+			reader := bytes.NewReader([]byte(tc.data))
+
+			bits, err := BitsFromBinStrReader(reader)
+			r.NoError(err)
+
+			a.Equal(tc.expectedBits, bits)
+		})
+	}
+
 }

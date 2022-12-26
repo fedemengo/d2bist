@@ -50,14 +50,31 @@ func main() {
 						Destination: &printStats,
 					},
 				},
-
 				Action: decode,
 			},
 			{
 				Name:        "encode",
 				Aliases:     []string{"e"},
 				Description: "encode a binary string to a binary file",
-				Action:      encode,
+				Flags: []cli.Flag{
+					&cli.BoolFlag{
+						Name:        "utf8",
+						Usage:       "the output will be a utf8 string of 0s and 1s",
+						Destination: &outputUTF8String,
+					},
+					&cli.StringFlag{
+						Name:        "cap",
+						Usage:       "cap the amount of data to read",
+						Destination: &dataCap,
+					},
+					&cli.BoolFlag{
+						Name:        "stats",
+						Aliases:     []string{"s"},
+						Usage:       "output bists distribution stats",
+						Destination: &printStats,
+					},
+				},
+				Action: encode,
 			},
 		},
 	}
@@ -127,5 +144,20 @@ bits: %d
 }
 
 func encode(ctx *cli.Context) error {
+	options := []f2bist.Opt{}
+	if maxBits, err := flags.ParseDataCapToBitsCount(dataCap); err != nil {
+		log.Fatal(err)
+	} else if maxBits > 0 {
+		options = append(options, f2bist.WithBitsCap(maxBits))
+	}
+
+	res, err := f2bist.Encode(context.Background(), options...)
+	if err != nil {
+		return err
+	}
+
+	outputStats(res.Stats)
+	outputBinaryString(res.Bits)
+
 	return nil
 }
