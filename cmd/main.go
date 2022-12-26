@@ -11,6 +11,7 @@ import (
 
 	"github.com/fedemengo/f2bist"
 	"github.com/fedemengo/f2bist/internal/flags"
+	"github.com/fedemengo/f2bist/internal/image"
 	"github.com/fedemengo/f2bist/internal/io"
 	"github.com/fedemengo/f2bist/internal/types"
 )
@@ -19,7 +20,8 @@ var (
 	outputUTF8String = false
 	printStats       = false
 
-	dataCap = ""
+	dataCap     = ""
+	pngFileName = ""
 )
 
 func main() {
@@ -38,16 +40,21 @@ func main() {
 						Usage:       "the output will be a utf8 string of 0s and 1s",
 						Destination: &outputUTF8String,
 					},
-					&cli.StringFlag{
-						Name:        "cap",
-						Usage:       "cap the amount of data to read",
-						Destination: &dataCap,
-					},
 					&cli.BoolFlag{
 						Name:        "stats",
 						Aliases:     []string{"s"},
 						Usage:       "output bists distribution stats",
 						Destination: &printStats,
+					},
+					&cli.StringFlag{
+						Name:        "cap",
+						Usage:       "cap the amount of data to read",
+						Destination: &dataCap,
+					},
+					&cli.StringFlag{
+						Name:        "png",
+						Usage:       "write bit string to png file",
+						Destination: &pngFileName,
 					},
 				},
 				Action: decode,
@@ -62,16 +69,21 @@ func main() {
 						Usage:       "the output will be a utf8 string of 0s and 1s",
 						Destination: &outputUTF8String,
 					},
-					&cli.StringFlag{
-						Name:        "cap",
-						Usage:       "cap the amount of data to read",
-						Destination: &dataCap,
-					},
 					&cli.BoolFlag{
 						Name:        "stats",
 						Aliases:     []string{"s"},
 						Usage:       "output bists distribution stats",
 						Destination: &printStats,
+					},
+					&cli.StringFlag{
+						Name:        "cap",
+						Usage:       "cap the amount of data to read",
+						Destination: &dataCap,
+					},
+					&cli.StringFlag{
+						Name:        "png",
+						Usage:       "write bit string to png file",
+						Destination: &pngFileName,
 					},
 				},
 				Action: encode,
@@ -110,8 +122,15 @@ func decode(ctx *cli.Context) error {
 		return err
 	}
 
-	outputStats(res.Stats)
 	outputBinaryString(res.Bits)
+
+	if printStats {
+		outputStats(res.Stats)
+	}
+
+	if len(pngFileName) > 0 {
+		image.WriteToPNG(res.Bits, pngFileName)
+	}
 
 	return nil
 }
@@ -156,8 +175,15 @@ func encode(ctx *cli.Context) error {
 		return err
 	}
 
-	outputStats(res.Stats)
 	outputBinaryString(res.Bits)
+
+	if printStats {
+		outputStats(res.Stats)
+	}
+
+	if len(pngFileName) > 0 {
+		image.WriteToPNG(res.Bits, pngFileName)
+	}
 
 	return nil
 }
