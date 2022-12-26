@@ -76,7 +76,9 @@ text`,
 
 			s := ""
 			buf := bytes.NewBufferString(s)
-			BitsToWriter(buf, bits)
+			err = BitsToWriter(buf, bits)
+			r.NoError(err)
+
 			bstr := buf.String()
 
 			a.Equal(tc.data, bstr)

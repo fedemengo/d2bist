@@ -9,7 +9,7 @@ import (
 	"github.com/fedemengo/f2bist/internal/types"
 )
 
-func Decode(ctx context.Context, r io.Reader, opts ...Opt) (*types.Result, error) {
+func Decode(_ context.Context, r io.Reader, opts ...Opt) (*types.Result, error) {
 	c := &Config{
 		MaxBits: -1,
 	}

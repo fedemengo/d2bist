@@ -18,7 +18,7 @@ const (
 
 func WriteToPNG(bits []types.Bit, filename string) error {
 
-	n := int(math.Sqrt(float64(len(bits))))
+	n := int(math.Min(math.Sqrt(float64(len(bits))), maxW))
 
 	currW := n + 1
 	currH := n + 1
@@ -51,7 +51,5 @@ func WriteToPNG(bits []types.Bit, filename string) error {
 		return err
 	}
 
-	png.Encode(f, img)
-
-	return nil
+	return png.Encode(f, img)
 }

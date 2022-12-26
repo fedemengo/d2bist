@@ -1,6 +1,7 @@
 package io
 
 import (
+	"fmt"
 	"io"
 	"strings"
 
@@ -54,7 +55,9 @@ func BitsToString(bits []types.Bit, opts ...Op) string {
 	return sb.String()
 }
 
-func BitsToWriter(w io.Writer, bits []types.Bit) {
+func BitsToWriter(w io.Writer, bits []types.Bit) error {
+	// note: we are safe handling bits grouped in bytes
+	// as it's not possible to write anything less than 1 byte https://stackoverflow.com/a/6701236/4712324
 	for i := 0; i < len(bits)/8; i++ {
 		start := i * 8
 		end := min((i+1)*8, len(bits))
@@ -62,8 +65,16 @@ func BitsToWriter(w io.Writer, bits []types.Bit) {
 		byteVal := [8]types.Bit{}
 		copy(byteVal[:], bits[start:end])
 
-		w.Write([]byte{engine.BitsToByte(byteVal)})
+		n, err := w.Write([]byte{engine.BitsToByte(byteVal)})
+		if err != nil {
+			return err
+		}
+		if n*8 != end-start {
+			return fmt.Errorf("%d bytes written - %d expected", n, end-start+1)
+		}
 	}
+
+	return nil
 }
 
 func min(a, b int) int {
