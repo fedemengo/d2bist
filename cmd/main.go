@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -8,7 +9,8 @@ import (
 	"github.com/mattn/go-isatty"
 	"github.com/urfave/cli/v2"
 
-	"github.com/fedemengo/f2bist/internal/engine"
+	"github.com/fedemengo/f2bist"
+	"github.com/fedemengo/f2bist/internal/flags"
 	"github.com/fedemengo/f2bist/internal/io"
 	"github.com/fedemengo/f2bist/internal/types"
 )
@@ -16,10 +18,11 @@ import (
 var (
 	outputUTF8String = false
 	printStats       = false
+
+	dataCap = ""
 )
 
 func main() {
-
 	app := &cli.App{
 		EnableBashCompletion: true,
 		Name:                 "biner",
@@ -34,6 +37,11 @@ func main() {
 						Name:        "utf8",
 						Usage:       "the output will be a utf8 string of 0s and 1s",
 						Destination: &outputUTF8String,
+					},
+					&cli.StringFlag{
+						Name:        "cap",
+						Usage:       "cap the amount of data to read",
+						Destination: &dataCap,
 					},
 					&cli.BoolFlag{
 						Name:        "stats",
@@ -61,18 +69,32 @@ func main() {
 
 func decode(ctx *cli.Context) error {
 	filename := ctx.Args().First()
-	readBits := io.BitsFromFile(filename)
-	if len(filename) == 0 {
-		readBits = io.BitsFromStdin
+
+	r := os.Stdin
+	if len(filename) != 0 {
+		f, err := os.Open(filename)
+		if err != nil {
+			return err
+		}
+
+		defer f.Close()
+		r = f
 	}
 
-	bits, err := readBits()
+	options := []f2bist.Opt{}
+	if maxBits, err := flags.ParseDataCapToBitsCount(dataCap); err != nil {
+		log.Fatal(err)
+	} else if maxBits > 0 {
+		options = append(options, f2bist.WithBitsCap(maxBits))
+	}
+
+	res, err := f2bist.Decode(context.Background(), r, options...)
 	if err != nil {
 		return err
 	}
 
-	outputStats(bits)
-	outputBinaryString(bits)
+	outputStats(res.Stats)
+	outputBinaryString(res.Bits)
 
 	return nil
 }
@@ -87,8 +109,7 @@ func outputBinaryString(bits []types.Bit) {
 	}
 }
 
-func outputStats(bits []types.Bit) {
-	stats := engine.AnalizeBits(bits)
+func outputStats(stats *types.Stats) {
 	fmt.Fprintf(os.Stderr, `
 bits: %d
 

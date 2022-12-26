@@ -34,7 +34,7 @@ text`,
 
 			reader := bytes.NewReader([]byte(tc.data))
 
-			bits, err := bitsFromReader(reader)
+			bits, err := BitsFromReader(reader)
 			r.NoError(err)
 
 			a.Equal(tc.expectedBits, bits)
@@ -70,7 +70,7 @@ text`,
 			a, r := assert.New(tt), require.New(tt)
 
 			reader := bytes.NewReader([]byte(tc.data))
-			bits, err := bitsFromReader(reader)
+			bits, err := BitsFromReader(reader)
 			r.NoError(err)
 
 			s := ""

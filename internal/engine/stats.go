@@ -10,18 +10,6 @@ const (
 	maxStringLen = 32
 )
 
-type Stats struct {
-	ZeroCount int
-	OneCount  int
-
-	SizeBits  int
-	SizeBytes int
-
-	ZeroStrings  map[int]int
-	OneStrings   map[int]int
-	MaxStringLen int
-}
-
 func max(a, b int) int {
 	if a > b {
 		return a
@@ -36,11 +24,11 @@ func min(a, b int) int {
 	return b
 }
 
-func AnalizeBits(bits []types.Bit) *Stats {
+func AnalizeBits(bits []types.Bit) *types.Stats {
 	zeroC, oneC := 0, 0
 	zeroL, oneL := 0, 0
 
-	stats := &Stats{
+	stats := &types.Stats{
 		ZeroStrings: make(map[int]int),
 		OneStrings:  make(map[int]int),
 	}

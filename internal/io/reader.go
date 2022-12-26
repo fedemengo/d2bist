@@ -10,7 +10,7 @@ import (
 )
 
 func BitsFromStdin() ([]types.Bit, error) {
-	return bitsFromReader(os.Stdin)
+	return BitsFromReader(os.Stdin)
 }
 
 func BitsFromFile(filename string) func() ([]types.Bit, error) {
@@ -21,11 +21,11 @@ func BitsFromFile(filename string) func() ([]types.Bit, error) {
 		}
 		defer f.Close()
 
-		return bitsFromReader(f)
+		return BitsFromReader(f)
 	}
 }
 
-func bitsFromReader(r io.Reader) ([]types.Bit, error) {
+func BitsFromReaderWithCap(r io.Reader, maxBits int) ([]types.Bit, error) {
 	bits := []types.Bit{}
 
 	bytes := make([]byte, 8)
@@ -45,6 +45,11 @@ func bitsFromReader(r io.Reader) ([]types.Bit, error) {
 			//fmt.Printf("%v `%c`\n", bitsArray, b)
 			bits = append(bits, bitsArray[0:8]...)
 		}
+
+		if maxBits > 0 && len(bits) >= maxBits {
+			lastCount = 0
+			break
+		}
 	}
 
 	if lastCount > 0 {
@@ -54,6 +59,14 @@ func bitsFromReader(r io.Reader) ([]types.Bit, error) {
 		}
 	}
 
+	if maxBits > 0 && maxBits < len(bits) {
+		bits = bits[:maxBits]
+	}
+
 	return bits, nil
 
+}
+
+func BitsFromReader(r io.Reader) ([]types.Bit, error) {
+	return BitsFromReaderWithCap(r, -1)
 }

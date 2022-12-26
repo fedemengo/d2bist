@@ -14,6 +14,7 @@ func BitsToByte(bits [8]types.Bit) byte {
 
 func ByteToBits(b byte) [8]types.Bit {
 	bits := [8]types.Bit{}
+
 	for i := 0; i < 8; i++ {
 		if b&(1<<(7-i)) > 0 {
 			bits[i] = 1
