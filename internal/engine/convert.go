@@ -1,6 +1,8 @@
-package main
+package engine
 
-func bitsToByte(bits [8]bit) byte {
+import "github.com/fedemengo/f2bist/internal/types"
+
+func BitsToByte(bits [8]types.Bit) byte {
 	b := byte(0)
 
 	for i := range bits {
@@ -10,8 +12,8 @@ func bitsToByte(bits [8]bit) byte {
 	return b
 }
 
-func byteToBits(b byte) [8]bit {
-	bits := [8]bit{}
+func ByteToBits(b byte) [8]types.Bit {
+	bits := [8]types.Bit{}
 	for i := 0; i < 8; i++ {
 		if b&(1<<(7-i)) > 0 {
 			bits[i] = 1

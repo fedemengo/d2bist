@@ -1,8 +1,12 @@
-package main
+package engine
 
-import "fmt"
+import (
+	"fmt"
 
-func analizeBits(bits []bit) {
+	"github.com/fedemengo/f2bist/internal/types"
+)
+
+func AnalizeBits(bits []types.Bit) {
 	zeroC, oneC := 0, 0
 	for _, c := range bits {
 		if c == 0 {

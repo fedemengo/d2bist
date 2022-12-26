@@ -1,15 +1,14 @@
-package main
+package io
 
 import (
-	"fmt"
 	"io"
-	"os"
 	"strings"
 
-	isatty "github.com/mattn/go-isatty"
+	"github.com/fedemengo/f2bist/internal/engine"
+	"github.com/fedemengo/f2bist/internal/types"
 )
 
-func bitToRune(b bit) rune {
+func bitToRune(b types.Bit) rune {
 	if b == 0 {
 		return '0'
 	}
@@ -23,19 +22,19 @@ type b2sConfig struct {
 
 type Op func(c *b2sConfig)
 
-func withSep(s rune) Op {
+func WithSep(s rune) Op {
 	return func(c *b2sConfig) {
 		c.separator = s
 	}
 }
 
-func withSepDistance(d int) Op {
+func WithSepDistance(d int) Op {
 	return func(c *b2sConfig) {
 		c.distance = d
 	}
 }
 
-func bitsToString(bits []bit, opts ...Op) string {
+func BitsToString(bits []types.Bit, opts ...Op) string {
 	c := &b2sConfig{
 		distance: 8,
 	}
@@ -55,24 +54,12 @@ func bitsToString(bits []bit, opts ...Op) string {
 	return sb.String()
 }
 
-func binaryStringToWriter(w io.Writer, bits []bit) {
+func BitsToWriter(w io.Writer, bits []types.Bit) {
 	for i := 0; i < len(bits)/8; i++ {
-		byteVal := [8]bit{}
+		byteVal := [8]types.Bit{}
 		copy(byteVal[:], bits[i*8:min((i+1)*8, len(bits)-1)])
-		w.Write([]byte{bitsToByte(byteVal)})
+		w.Write([]byte{engine.BitsToByte(byteVal)})
 	}
-
-}
-
-func outputBinaryString(bits []bit) {
-	if outputUTF8String {
-		fmt.Println(bitsToString(bits))
-	} else if isatty.IsTerminal(os.Stdout.Fd()) {
-		fmt.Println(bitsToString(bits, withSep(' ')))
-	} else {
-		binaryStringToWriter(os.Stdout, bits)
-	}
-
 }
 
 func min(a, b int) int {

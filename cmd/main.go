@@ -1,13 +1,16 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
+	"github.com/fedemengo/f2bist/internal/engine"
+	"github.com/fedemengo/f2bist/internal/io"
+	"github.com/fedemengo/f2bist/internal/types"
+	"github.com/mattn/go-isatty"
 	"github.com/urfave/cli/v2"
 )
-
-type bit uint8
 
 var (
 	outputUTF8String = false
@@ -57,9 +60,9 @@ func main() {
 
 func decode(ctx *cli.Context) error {
 	filename := ctx.Args().First()
-	readBits := bitsFromFile(filename)
+	readBits := io.BitsFromFile(filename)
 	if len(filename) == 0 {
-		readBits = bitsFromStdin
+		readBits = io.BitsFromStdin
 	}
 
 	bits, err := readBits()
@@ -67,25 +70,20 @@ func decode(ctx *cli.Context) error {
 		return err
 	}
 
+	engine.AnalizeBits(bits)
+
 	outputBinaryString(bits)
-	analizeBits(bits)
 
 	return nil
 }
 
-func bitsFromStdin() ([]bit, error) {
-	return bitsFromReader(os.Stdin)
-}
-
-func bitsFromFile(filename string) func() ([]bit, error) {
-	return func() ([]bit, error) {
-		f, err := os.Open(filename)
-		if err != nil {
-			return nil, err
-		}
-		defer f.Close()
-
-		return bitsFromReader(f)
+func outputBinaryString(bits []types.Bit) {
+	if outputUTF8String {
+		fmt.Println(io.BitsToString(bits))
+	} else if isatty.IsTerminal(os.Stdout.Fd()) {
+		fmt.Println(io.BitsToString(bits, io.WithSep(' ')))
+	} else {
+		io.BitsToWriter(os.Stdout, bits)
 	}
 }
 
