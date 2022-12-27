@@ -1,4 +1,4 @@
-package f2bist
+package core
 
 type Config struct {
 	MaxBits int

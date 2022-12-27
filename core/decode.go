@@ -1,4 +1,4 @@
-package f2bist
+package core
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"github.com/fedemengo/f2bist/internal/types"
 )
 
-func Encode(_ context.Context, r io.Reader, opts ...Opt) (*types.Result, error) {
+func Decode(_ context.Context, r io.Reader, opts ...Opt) (*types.Result, error) {
 	c := &Config{
 		MaxBits: -1,
 	}
@@ -17,7 +17,7 @@ func Encode(_ context.Context, r io.Reader, opts ...Opt) (*types.Result, error) 
 		opt(c)
 	}
 
-	bits, err := fio.BitsFromBinStrReaderWithCap(r, c.MaxBits)
+	bits, err := fio.BitsFromByteReaderWithCap(r, c.MaxBits)
 	if err != nil {
 		return nil, err
 	}
@@ -28,5 +28,4 @@ func Encode(_ context.Context, r io.Reader, opts ...Opt) (*types.Result, error) 
 		Bits:  bits,
 		Stats: stats,
 	}, nil
-
 }

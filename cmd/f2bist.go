@@ -1,4 +1,4 @@
-package main
+package cmd
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"github.com/mattn/go-isatty"
 	"github.com/urfave/cli/v2"
 
-	"github.com/fedemengo/f2bist"
+	"github.com/fedemengo/f2bist/core"
 	"github.com/fedemengo/f2bist/internal/flags"
 	"github.com/fedemengo/f2bist/internal/image"
 	"github.com/fedemengo/f2bist/internal/io"
@@ -24,7 +24,9 @@ var (
 	pngFileName = ""
 )
 
-func main() {
+var app *cli.App
+
+func init() {
 	flags := []cli.Flag{
 		&cli.BoolFlag{
 			Name:        "utf8",
@@ -49,7 +51,7 @@ func main() {
 		},
 	}
 
-	app := &cli.App{
+	app = &cli.App{
 		EnableBashCompletion: true,
 		Name:                 "biner",
 		Description:          "handle files as binary strings",
@@ -71,6 +73,9 @@ func main() {
 		},
 	}
 
+}
+
+func Run() {
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}
@@ -90,14 +95,14 @@ func decode(ctx *cli.Context) error {
 		r = f
 	}
 
-	options := []f2bist.Opt{}
+	options := []core.Opt{}
 	if maxBits, err := flags.ParseDataCapToBitsCount(dataCap); err != nil {
 		log.Fatal(err)
 	} else if maxBits > 0 {
-		options = append(options, f2bist.WithBitsCap(maxBits))
+		options = append(options, core.WithBitsCap(maxBits))
 	}
 
-	res, err := f2bist.Decode(context.Background(), r, options...)
+	res, err := core.Decode(context.Background(), r, options...)
 	if err != nil {
 		return err
 	}
@@ -119,14 +124,14 @@ func decode(ctx *cli.Context) error {
 }
 
 func encode(_ *cli.Context) error {
-	options := []f2bist.Opt{}
+	options := []core.Opt{}
 	if maxBits, err := flags.ParseDataCapToBitsCount(dataCap); err != nil {
 		log.Fatal(err)
 	} else if maxBits > 0 {
-		options = append(options, f2bist.WithBitsCap(maxBits))
+		options = append(options, core.WithBitsCap(maxBits))
 	}
 
-	res, err := f2bist.Encode(context.Background(), os.Stdin, options...)
+	res, err := core.Encode(context.Background(), os.Stdin, options...)
 	if err != nil {
 		return err
 	}
