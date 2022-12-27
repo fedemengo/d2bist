@@ -25,7 +25,7 @@ func Decode(ctx context.Context, r io.Reader, opts ...Opt) (*types.Result, error
 		opt(c)
 	}
 
-	res, err := decode(ctx, r, opts...)
+	res, err := decodeWithAnalysis(ctx, r, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +45,7 @@ func Decode(ctx context.Context, r io.Reader, opts ...Opt) (*types.Result, error
 
 		log.Trace().Int("bits", 8*cr.Size()).Msg("compressed reader ready")
 
-		res, err := decode(ctx, cr, WithOutBitsCap(c.OutMaxBits))
+		res, err := decodeWithAnalysis(ctx, cr, WithOutBitsCap(c.OutMaxBits))
 		if err != nil {
 			return nil, fmt.Errorf("error decoding from compressed reader: %w", err)
 		}
@@ -55,6 +55,7 @@ func Decode(ctx context.Context, r io.Reader, opts ...Opt) (*types.Result, error
 			CompressionAlgorithm: string(c.OutCompressionType),
 			Stats:                res.Stats,
 		}
+
 		result.Bits = res.Bits
 	}
 

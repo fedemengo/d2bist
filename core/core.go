@@ -33,12 +33,25 @@ func decode(ctx context.Context, r io.Reader, opts ...Opt) (*types.Result, error
 		return nil, fmt.Errorf("cannot read bits from reader: %w", err)
 	}
 
-	stats := engine.AnalizeBits(bits)
+	if c.OutMaxBits > 0 {
+		bitsCap := min(c.OutMaxBits, len(bits))
+		bits = bits[:bitsCap]
+	}
 
 	return &types.Result{
-		Bits:  bits,
-		Stats: stats,
+		Bits: bits,
 	}, nil
+}
+
+func decodeWithAnalysis(ctx context.Context, r io.Reader, opts ...Opt) (*types.Result, error) {
+	res, err := decode(ctx, r, opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	res.Stats = engine.AnalizeBits(res.Bits)
+
+	return res, nil
 }
 
 func bitsToReader(ctx context.Context, bits []types.Bit, compType compression.CompressionType) (fio.ReaderWithSize, error) {
