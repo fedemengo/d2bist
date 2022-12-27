@@ -21,21 +21,21 @@ type b2sConfig struct {
 	distance  int
 }
 
-type Op func(c *b2sConfig)
+type Opt func(c *b2sConfig)
 
-func WithSep(s rune) Op {
+func WithSep(s rune) Opt {
 	return func(c *b2sConfig) {
 		c.separator = s
 	}
 }
 
-func WithSepDistance(d int) Op {
+func WithSepDistance(d int) Opt {
 	return func(c *b2sConfig) {
 		c.distance = d
 	}
 }
 
-func BitsToString(bits []types.Bit, opts ...Op) string {
+func BitsToString(bits []types.Bit, opts ...Opt) string {
 	c := &b2sConfig{
 		distance: 8,
 	}
