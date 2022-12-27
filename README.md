@@ -100,3 +100,38 @@ l09: 0:       113 - 1:       124 | ratio: 0.91129
 l10: 0:        43 - 1:        82 | ratio: 0.52439
 ```
 
+#### Compare compression algorithm
+
+Starting from 5000 bits from `ripgrep`
+
+```
+> f2bist decode -cap 5000 /usr/local/bin/rg | cat 2>/dev/null | f2bist decode -s -str 2>&1 | head -3 | tail -1
+bits: 5000
+```
+
+Zip compresses this particular piece of data to about `59%` of its original size
+
+```
+> f2bist decode -cap 5000 /usr/local/bin/rg | zip 2>/dev/null | f2bist decode -s -str 2>&1 | head -3 | tail -1
+bits: 2976
+```
+
+Gzip compresses this particular piece of data to about `39%` of its original size
+
+```
+> f2bist decode -cap 5000 /usr/local/bin/rg | gzip 2>/dev/null | f2bist decode -s -str 2>&1 | head -3 | tail -1
+bits: 1968
+```
+
+Brotli compresses this particular piece of data to about `57-32%` of its original size, depending on the compression level
+
+```
+> f2bist decode -cap 5000 /usr/local/bin/rg | brotli -q 0 2>/dev/null | f2bist decode -s -str 2>&1 | head -3 | tail -1
+bits: 2896
+```
+
+```
+> f2bist decode -cap 5000 /usr/local/bin/rg | brotli -q 11 2>/dev/null | f2bist decode -s -str 2>&1 | head -3 | tail -1
+bits: 1696
+```
+
