@@ -1,24 +1,27 @@
 package io
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
 	"os"
 
+	"github.com/rs/zerolog"
+
 	"github.com/fedemengo/f2bist/internal/engine"
 	"github.com/fedemengo/f2bist/internal/types"
 )
 
-func BitsFromBinStrStdin() ([]types.Bit, error) {
-	return BitsFromBinStrReader(os.Stdin)
+func BitsFromBinStrStdin(ctx context.Context) ([]types.Bit, error) {
+	return BitsFromBinStrReader(ctx, os.Stdin)
 }
 
-func BitsFromBinStrStdinWithCap(maxBits int) ([]types.Bit, error) {
-	return BitsFromBinStrReaderWithCap(os.Stdin, maxBits)
+func BitsFromBinStrStdinWithCap(ctx context.Context, maxBits int) ([]types.Bit, error) {
+	return BitsFromBinStrReaderWithCap(ctx, os.Stdin, maxBits)
 }
 
-func BitsFromBinStrReaderWithCap(r io.Reader, maxBits int) ([]types.Bit, error) {
+func BitsFromBinStrReaderWithCap(ctx context.Context, r io.Reader, maxBits int) ([]types.Bit, error) {
 	opts := []opt{
 		withMaxBits(maxBits),
 		withTranform(func(b byte) ([]types.Bit, error) {
@@ -28,17 +31,17 @@ func BitsFromBinStrReaderWithCap(r io.Reader, maxBits int) ([]types.Bit, error) 
 			case '1':
 				return []types.Bit{1}, nil
 			default:
-				return []types.Bit{}, types.ErrInvalidBit
+				return []types.Bit{}, fmt.Errorf("cannot handle `%c`: %w", b, types.ErrInvalidBit)
 			}
 		}),
 	}
 
-	return BitsFromReader(r, opts...)
+	return BitsFromReader(ctx, r, opts...)
 
 }
 
-func BitsFromBinStrReader(r io.Reader) ([]types.Bit, error) {
-	return BitsFromReader(r, withTranform(func(b byte) ([]types.Bit, error) {
+func BitsFromBinStrReader(ctx context.Context, r io.Reader) ([]types.Bit, error) {
+	return BitsFromReader(ctx, r, withTranform(func(b byte) ([]types.Bit, error) {
 		switch b {
 		case '0':
 			return []types.Bit{0}, nil
@@ -50,11 +53,11 @@ func BitsFromBinStrReader(r io.Reader) ([]types.Bit, error) {
 	}))
 }
 
-func BitsFromByteStdin() ([]types.Bit, error) {
-	return BitsFromByteReader(os.Stdin)
+func BitsFromByteStdin(ctx context.Context) ([]types.Bit, error) {
+	return BitsFromByteReader(ctx, os.Stdin)
 }
 
-func BitsFromByteFile(filename string) func() ([]types.Bit, error) {
+func BitsFromByteFile(ctx context.Context, filename string) func() ([]types.Bit, error) {
 	return func() ([]types.Bit, error) {
 		f, err := os.Open(filename)
 		if err != nil {
@@ -62,7 +65,7 @@ func BitsFromByteFile(filename string) func() ([]types.Bit, error) {
 		}
 		defer f.Close()
 
-		return BitsFromByteReader(f)
+		return BitsFromByteReader(ctx, f)
 	}
 }
 
@@ -87,7 +90,9 @@ func withTranform(t tranform) opt {
 	}
 }
 
-func BitsFromReader(r io.Reader, opts ...opt) ([]types.Bit, error) {
+func BitsFromReader(ctx context.Context, r io.Reader, opts ...opt) ([]types.Bit, error) {
+	log := zerolog.Ctx(ctx)
+
 	c := &config{
 		maxBits: -1,
 	}
@@ -107,15 +112,18 @@ func BitsFromReader(r io.Reader, opts ...opt) ([]types.Bit, error) {
 			break
 		}
 		if err != nil {
-			return nil, err
+			log.Error().Err(err).Msg("unknown error")
+			return nil, fmt.Errorf("unknown error: %w", err)
 		}
 
 		for _, b := range bytes[:n] {
 			bitsArray, err := c.transform(b)
 			//fmt.Printf("%v `%c`\n", bitsArray, b)
 			if errors.Is(err, types.ErrInvalidBit) {
+				log.Error().Err(err).Msgf("invalid byte to bits: %v", b)
 				continue
 			} else if err != nil {
+				log.Error().Err(err).Msgf("cannot convert byte to bits: %v", b)
 				return nil, fmt.Errorf("error when parsing remaining data: %w", err)
 			} else {
 				bits = append(bits, bitsArray...)
@@ -132,7 +140,7 @@ func BitsFromReader(r io.Reader, opts ...opt) ([]types.Bit, error) {
 		for _, b := range bytes[:lastCount] {
 			bitsArray, err := c.transform(b)
 			if errors.Is(err, types.ErrInvalidBit) {
-				//
+				log.Error().Err(err).Msgf("invalid byte to bits: %v", b)
 			} else if err != nil {
 				return nil, fmt.Errorf("error when parsing remaining data: %w", err)
 			} else {
@@ -149,7 +157,7 @@ func BitsFromReader(r io.Reader, opts ...opt) ([]types.Bit, error) {
 
 }
 
-func BitsFromByteReaderWithCap(r io.Reader, maxBits int) ([]types.Bit, error) {
+func BitsFromByteReaderWithCap(ctx context.Context, r io.Reader, maxBits int) ([]types.Bit, error) {
 	opts := []opt{
 		withMaxBits(maxBits),
 		withTranform(func(b byte) ([]types.Bit, error) {
@@ -157,9 +165,9 @@ func BitsFromByteReaderWithCap(r io.Reader, maxBits int) ([]types.Bit, error) {
 			return bits[:], nil
 		}),
 	}
-	return BitsFromReader(r, opts...)
+	return BitsFromReader(ctx, r, opts...)
 }
 
-func BitsFromByteReader(r io.Reader) ([]types.Bit, error) {
-	return BitsFromByteReaderWithCap(r, -1)
+func BitsFromByteReader(ctx context.Context, r io.Reader) ([]types.Bit, error) {
+	return BitsFromByteReaderWithCap(ctx, r, -1)
 }

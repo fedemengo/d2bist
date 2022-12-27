@@ -14,7 +14,7 @@ The need behind it is to have a quick way to visualize programs as binary string
 #### Convert data to bin string
 
 ```
-> echo "random text to png" | f2bist decode -utf8
+> echo "random text to png" | f2bist decode -str
 01110010011000010110111001100100011011110110110100100000011101000110010101111000011101000010000001110100011011110010000001110000011011100110011100001010
 ```
 
@@ -28,7 +28,7 @@ random text to png
 #### Convert data to bin string and bin string back to data
 
 ```
-> echo "random text to png" | f2bist decode -utf8 | f2bist encode | xargs echo
+> echo "random text to png" | f2bist decode -str | f2bist encode | xargs echo
 random text to png
 ```
 
@@ -39,7 +39,7 @@ Given the data `random text to png`, its binary representation as image
 <img src="examples/images/text.png" alt="text" width="200"/>
 
 ```
-> echo "random text to png" | f2bist decode -stats -utf8 -png text.png
+> echo "random text to png" | f2bist decode -s -str -png text.png
 01110010011000010110111001100100011011110110110100100000011101000110010101111000011101000010000001110100011011110010000001110000011011100110011100001010
 
 bits: 152
@@ -105,33 +105,50 @@ l10: 0:        43 - 1:        82 | ratio: 0.52439
 Starting from 5000 bits from `ripgrep`
 
 ```
-> f2bist decode -cap 5000 /usr/local/bin/rg | cat 2>/dev/null | f2bist decode -s -str 2>&1 | head -3 | tail -1
+> f2bist -rcap 5000 decode /usr/local/bin/rg | cat | f2bist decode -s -str 2>&1 >/dev/null | sed -n '2p'
 bits: 5000
 ```
 
 Zip compresses this particular piece of data to about `59%` of its original size
 
 ```
-> f2bist decode -cap 5000 /usr/local/bin/rg | zip 2>/dev/null | f2bist decode -s -str 2>&1 | head -3 | tail -1
+> f2bist -rcap 5000 decode /usr/local/bin/rg | zip 2>/dev/null | f2bist decode -s -str 2>&1 1>/dev/null | sed -n '2p'
 bits: 2976
 ```
 
 Gzip compresses this particular piece of data to about `39%` of its original size
 
 ```
-> f2bist decode -cap 5000 /usr/local/bin/rg | gzip 2>/dev/null | f2bist decode -s -str 2>&1 | head -3 | tail -1
+> f2bist -rcap 5000 decode /usr/local/bin/rg | gzip | f2bist decode -s -str 2>&1 >/dev/null | sed -n '2p'
 bits: 1968
 ```
 
 Brotli compresses this particular piece of data to about `57-32%` of its original size, depending on the compression level
 
 ```
-> f2bist decode -cap 5000 /usr/local/bin/rg | brotli -q 0 2>/dev/null | f2bist decode -s -str 2>&1 | head -3 | tail -1
+> f2bist -rcap 5000 decode /usr/local/bin/rg | brotli -q 0 | f2bist decode -s -str 2>&1 >/dev/null | sed -n '2p'
 bits: 2896
 ```
 
 ```
-> f2bist decode -cap 5000 /usr/local/bin/rg | brotli -q 11 2>/dev/null | f2bist decode -s -str 2>&1 | head -3 | tail -1
+> f2bist -rcap 5000 decode /usr/local/bin/rg | brotli -q 11 | f2bist decode -s -str 2>&1 >/dev/null | sed -n '2p'
 bits: 1696
 ```
 
+#### Testing compression internally
+
+```
+> f2bist -rcap 5000 decode -s -c b /usr/local/bin/rg >/dev/null
+bits: 5000
+
+0: 4252
+1: 748
+
+compression ratio: 33.920
+compression algorithm: Brotli
+
+bits: 1696
+
+0: 891
+1: 805
+```

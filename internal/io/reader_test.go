@@ -2,6 +2,7 @@ package io
 
 import (
 	"bytes"
+	"context"
 	"strings"
 	"testing"
 
@@ -29,13 +30,14 @@ text`,
 		},
 	}
 
+	ctx := context.Background()
 	for _, tc := range testCases {
 		t.Run(tc.name, func(tt *testing.T) {
 			a, r := assert.New(tt), require.New(tt)
 
 			reader := bytes.NewReader([]byte(tc.data))
 
-			bits, err := BitsFromByteReader(reader)
+			bits, err := BitsFromByteReader(ctx, reader)
 			r.NoError(err)
 
 			a.Equal(tc.expectedBits, bits)
@@ -66,12 +68,13 @@ text`,
 		},
 	}
 
+	ctx := context.Background()
 	for _, tc := range testCases {
 		t.Run(tc.name, func(tt *testing.T) {
 			a, r := assert.New(tt), require.New(tt)
 
 			reader := bytes.NewReader([]byte(tc.data))
-			bits, err := BitsFromByteReader(reader)
+			bits, err := BitsFromByteReader(ctx, reader)
 			r.NoError(err)
 
 			s := ""
@@ -104,13 +107,14 @@ func TestBitStringToBit(t *testing.T) {
 		},
 	}
 
+	ctx := context.Background()
 	for _, tc := range testCases {
 		t.Run(tc.name, func(tt *testing.T) {
 			a, r := assert.New(tt), require.New(tt)
 
 			reader := bytes.NewReader([]byte(tc.data))
 
-			bits, err := BitsFromBinStrReader(reader)
+			bits, err := BitsFromBinStrReader(ctx, reader)
 			r.NoError(err)
 
 			a.Equal(tc.expectedBits, bits)

@@ -16,6 +16,15 @@ type Stats struct {
 	ZeroStrings  map[int]int
 	OneStrings   map[int]int
 	MaxStringLen int
+
+	CompressionStats *CompressionStats
+}
+
+type CompressionStats struct {
+	CompressionRatio     float64
+	CompressionAlgorithm string
+
+	Stats *Stats
 }
 
 type Result struct {

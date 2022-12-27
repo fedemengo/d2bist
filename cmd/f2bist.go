@@ -3,16 +3,18 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
+	"time"
 
 	"github.com/mattn/go-isatty"
+	"github.com/rs/zerolog"
+	zlog "github.com/rs/zerolog/log"
 	"github.com/urfave/cli/v2"
 
 	"github.com/fedemengo/f2bist/core"
 	"github.com/fedemengo/f2bist/internal/flags"
 	"github.com/fedemengo/f2bist/internal/image"
-	"github.com/fedemengo/f2bist/internal/io"
+	fio "github.com/fedemengo/f2bist/internal/io"
 	"github.com/fedemengo/f2bist/internal/types"
 )
 
@@ -20,12 +22,15 @@ var (
 	outputString = false
 	printStats   = false
 
-	separatorRune = rune(0)
-	separator     = ""
-	dataCap       = ""
-	pngFileName   = ""
+	readDataCap   = ""
+	compressionIn = ""
 
-	count = 8
+	writeDataCap   = ""
+	compressionOut = ""
+
+	pngFileName   = ""
+	separatorRune = rune(0)
+	count         = 8
 )
 
 var app *cli.App
@@ -33,23 +38,29 @@ var app *cli.App
 func init() {
 	flags := []cli.Flag{
 		&cli.StringFlag{
-			Name:        "cap",
-			Usage:       "cap the amount of data to read",
-			Destination: &dataCap,
+			Name:        "wcap",
+			Usage:       "cap the amount of data to write after processing",
+			Destination: &writeDataCap,
 		}, &cli.StringFlag{
+			Name:        "compression",
+			Aliases:     []string{"c"},
+			Usage:       "specify the compression algorithm do compress the output data",
+			DefaultText: "auto",
+			Destination: &compressionOut,
+		},
+		&cli.StringFlag{
 			Name:        "png",
 			Usage:       "write bit string to png file",
 			Destination: &pngFileName,
 		}, &cli.StringFlag{
 			Name:        "sep",
 			Usage:       "separator to make the bin string more readable",
-			Destination: &separator,
 			DefaultText: "none",
-			Action: func(ctx *cli.Context, s string) error {
-				if len(separator) > 0 && len(separator) != 1 {
-					return fmt.Errorf("f2bist: bad separator `%s`", separator)
+			Action: func(_ *cli.Context, s string) error {
+				if len(s) > 0 && len(s) != 1 {
+					return fmt.Errorf("f2bist: bad separator `%s`", s)
 				}
-				separatorRune = rune(separator[0])
+				separatorRune = rune(s[0])
 
 				return nil
 			},
@@ -76,18 +87,31 @@ func init() {
 		EnableBashCompletion: true,
 		Name:                 "f2bist",
 		Description:          "Handle files as binary strings",
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:        "rcap",
+				Usage:       "cap the amount of data to read before processing",
+				Destination: &readDataCap,
+			}, &cli.StringFlag{
+				Name:        "compression",
+				Aliases:     []string{"c"},
+				Usage:       "specify the compression algorithm do decompress the input data",
+				DefaultText: "auto",
+				Destination: &compressionIn,
+			},
+		},
 		Commands: []*cli.Command{
 			{
 				Name:    "decode",
 				Aliases: []string{"d"},
-				Usage:   "Decode a file to a binary string",
+				Usage:   "Decode data to corresponding binary string",
 				Flags:   flags,
 				Action:  decode,
 			},
 			{
 				Name:    "encode",
 				Aliases: []string{"e"},
-				Usage:   "Encode a binary string to a binary file",
+				Usage:   "Encode a binary string to the corresponding data",
 				Flags:   flags,
 				Action:  encode,
 			},
@@ -96,14 +120,63 @@ func init() {
 }
 
 func Run() {
+	zlog.Logger = zlog.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	if err := app.Run(os.Args); err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		zlog.Fatal().Err(err).Msg("execution failed")
 		os.Exit(1)
 	}
 }
 
-func decode(ctx *cli.Context) error {
-	filename := ctx.Args().First()
+func logger() zerolog.Logger {
+	level := zerolog.Disabled
+	switch l := os.Getenv("LOG_LEVEL"); l {
+	case "trace":
+		level = zerolog.TraceLevel
+	case "error":
+		level = zerolog.ErrorLevel
+	}
+
+	logWriter := zerolog.ConsoleWriter{
+		Out:        os.Stderr,
+		TimeFormat: time.RFC3339,
+		NoColor:    false,
+	}
+	return zerolog.New(logWriter).With().
+		Timestamp().
+		Caller().
+		Logger().
+		Level(level)
+}
+
+func OptsFromFlags() ([]core.Opt, error) {
+	options := []core.Opt{}
+
+	if maxBits, err := flags.ParseDataCapToBitsCount(readDataCap); err != nil {
+		return nil, fmt.Errorf("cannot parse data cap flag")
+	} else if maxBits > 0 {
+		options = append(options, core.WithInBitsCap(maxBits))
+	}
+	if maxBits, err := flags.ParseDataCapToBitsCount(writeDataCap); err != nil {
+		return nil, fmt.Errorf("cannot parse data cap flag")
+	} else if maxBits > 0 {
+		options = append(options, core.WithOutBitsCap(maxBits))
+	}
+
+	cInType := flags.ParseCompressionFlag(compressionIn)
+	options = append(options, core.WithInCompression(cInType))
+
+	cOutType := flags.ParseCompressionFlag(compressionOut)
+	options = append(options, core.WithOutCompression(cOutType))
+
+	return options, nil
+}
+
+// decode read data and decodes it to the binary string
+func decode(cliCtx *cli.Context) error {
+	log := logger()
+	ctx := log.WithContext(context.Background())
+
+	filename := cliCtx.Args().First()
 
 	r := os.Stdin
 	if len(filename) != 0 {
@@ -116,17 +189,17 @@ func decode(ctx *cli.Context) error {
 		r = f
 	}
 
-	options := []core.Opt{}
-	if maxBits, err := flags.ParseDataCapToBitsCount(dataCap); err != nil {
-		log.Fatal(err)
-	} else if maxBits > 0 {
-		options = append(options, core.WithBitsCap(maxBits))
+	opts, err := OptsFromFlags()
+	if err != nil {
+		return fmt.Errorf("error parsing input flags: %w", err)
 	}
 
-	res, err := core.Decode(context.Background(), r, options...)
+	res, err := core.Decode(ctx, r, opts...)
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot decode: %w", err)
 	}
+
+	log.Trace().Int("bits", len(res.Bits)).Msg("decoded bits")
 
 	err = outputBinaryString(res.Bits)
 	if err != nil {
@@ -144,15 +217,17 @@ func decode(ctx *cli.Context) error {
 	return nil
 }
 
+// encode read a binary string and encodes it to the equivalent data
 func encode(_ *cli.Context) error {
-	options := []core.Opt{}
-	if maxBits, err := flags.ParseDataCapToBitsCount(dataCap); err != nil {
-		log.Fatal(err)
-	} else if maxBits > 0 {
-		options = append(options, core.WithBitsCap(maxBits))
+	log := logger()
+	ctx := log.WithContext(context.Background())
+
+	opts, err := OptsFromFlags()
+	if err != nil {
+		return fmt.Errorf("error parsing input flags: %w", err)
 	}
 
-	res, err := core.Encode(context.Background(), os.Stdin, options...)
+	res, err := core.Encode(ctx, os.Stdin, opts...)
 	if err != nil {
 		return err
 	}
@@ -161,6 +236,8 @@ func encode(_ *cli.Context) error {
 	if err != nil {
 		return err
 	}
+
+	log.Trace().Int("bits", len(res.Bits)).Msg("encoded bits")
 
 	if printStats {
 		outputStats(res.Stats)
@@ -176,13 +253,13 @@ func encode(_ *cli.Context) error {
 func outputBinaryString(bits []types.Bit) error {
 	var err error
 	if outputString || isatty.IsTerminal(os.Stdout.Fd()) {
-		opts := []io.Opt{
-			io.WithSep(separatorRune),
-			io.WithSepDistance(count),
+		opts := []fio.Opt{
+			fio.WithSep(separatorRune),
+			fio.WithSepDistance(count),
 		}
-		fmt.Fprintln(os.Stdout, io.BitsToString(bits, opts...))
+		fmt.Fprintln(os.Stdout, fio.BitsToString(bits, opts...))
 	} else {
-		err = io.BitsToWriter(os.Stdout, bits)
+		err = fio.BitsToWriter(os.Stdout, bits)
 	}
 
 	return err
@@ -196,11 +273,24 @@ bits: %d
 1: %d
 `, stats.SizeBits, stats.ZeroCount, stats.OneCount)
 
-	fmt.Fprintln(os.Stderr)
+	if stats.CompressionStats != nil {
+		stats.MaxStringLen = 0
+	} else {
+		fmt.Fprintln(os.Stderr)
+	}
 
 	for i := 1; i <= stats.MaxStringLen; i++ {
 		zc, oc := stats.ZeroStrings[i], stats.OneStrings[i]
 		fmt.Fprintf(os.Stderr, "l%02d: 0: %9d - 1: %9d | ratio: %.5f\n", i, zc, oc, float64(zc)/float64(oc))
 	}
-	fmt.Fprintln(os.Stderr)
+
+	if stats.CompressionStats != nil {
+		fmt.Fprintf(os.Stderr, `
+compression ratio: %.3f
+compression algorithm: %s
+`, stats.CompressionStats.CompressionRatio, stats.CompressionStats.CompressionAlgorithm)
+		outputStats(stats.CompressionStats.Stats)
+	} else {
+		fmt.Fprintln(os.Stderr)
+	}
 }

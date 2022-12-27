@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strconv"
 	"unicode"
+
+	"github.com/fedemengo/f2bist/compression"
 )
 
 var (
@@ -26,6 +28,25 @@ var (
 var (
 	ErrInvalidFlag = errors.New("flag is not valid")
 )
+
+func ParseCompressionFlag(fc string) compression.CompressionType {
+	switch fc {
+	case "zip":
+		return compression.Zip
+	case "gz", "gzip":
+		return compression.Gzip
+	case "b", "brotli":
+		return compression.Brotli
+	case "zstd":
+		return compression.Zstd
+	case "s2":
+		return compression.S2
+	case "h", "huff":
+		return compression.Huff
+	default:
+		return compression.None
+	}
+}
 
 func ParseDataCapToBitsCount(dataCap string) (int, error) {
 	if dataCap == "" {
