@@ -85,10 +85,3 @@ func Encode(ctx context.Context, r io.Reader, opts ...Opt) (*types.Result, error
 
 	return result, nil
 }
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}

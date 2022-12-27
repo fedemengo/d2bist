@@ -81,3 +81,10 @@ func bitsToReader(ctx context.Context, bits []types.Bit, compType compression.Co
 	return fio.NewReaderWithSize(cr, buf.Len()), nil
 
 }
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
