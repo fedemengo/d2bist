@@ -42,12 +42,10 @@ func Encode(ctx context.Context, r io.Reader, opts ...Opt) (*types.Result, error
 			return nil, err
 		}
 
-		res, err := decode(ctx, cr)
+		bits, err = readerToBits(ctx, cr)
 		if err != nil {
 			return nil, fmt.Errorf("error decoding from compressed reader: %w", err)
 		}
-
-		bits = res.Bits
 	}
 
 	if c.OutMaxBits > 0 {
@@ -68,7 +66,7 @@ func Encode(ctx context.Context, r io.Reader, opts ...Opt) (*types.Result, error
 			return nil, fmt.Errorf("cannot write bytes to compressed reader: %w", err)
 		}
 
-		res, err := decodeWithAnalysis(ctx, cr, WithOutBitsCap(c.OutMaxBits))
+		res, err := readerToBitsWithAnalysis(ctx, cr, WithOutBitsCap(c.OutMaxBits))
 		if err != nil {
 			return nil, fmt.Errorf("error decoding from compressed reader: %w", err)
 		}

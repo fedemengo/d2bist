@@ -14,18 +14,7 @@ import (
 func Decode(ctx context.Context, r io.Reader, opts ...Opt) (*types.Result, error) {
 	log := zerolog.Ctx(ctx)
 
-	c := &Config{
-		InMaxBits:         -1,
-		InCompressionType: compression.None,
-
-		OutMaxBits:         -1,
-		OutCompressionType: compression.None,
-	}
-	for _, opt := range opts {
-		opt(c)
-	}
-
-	res, err := decodeWithAnalysis(ctx, r, opts...)
+	res, err := readerToBitsWithAnalysis(ctx, r, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -33,6 +22,14 @@ func Decode(ctx context.Context, r io.Reader, opts ...Opt) (*types.Result, error
 	result := &types.Result{
 		Bits:  res.Bits,
 		Stats: res.Stats,
+	}
+
+	c := &Config{
+		OutMaxBits:         -1,
+		OutCompressionType: compression.None,
+	}
+	for _, opt := range opts {
+		opt(c)
 	}
 
 	if c.OutCompressionType != compression.None {
@@ -45,7 +42,7 @@ func Decode(ctx context.Context, r io.Reader, opts ...Opt) (*types.Result, error
 
 		log.Trace().Int("bits", 8*cr.Size()).Msg("compressed reader ready")
 
-		res, err := decodeWithAnalysis(ctx, cr, WithOutBitsCap(c.OutMaxBits))
+		res, err := readerToBitsWithAnalysis(ctx, cr, WithOutBitsCap(c.OutMaxBits))
 		if err != nil {
 			return nil, fmt.Errorf("error decoding from compressed reader: %w", err)
 		}

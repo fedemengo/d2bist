@@ -14,10 +14,12 @@ import (
 	"github.com/fedemengo/f2bist/internal/types"
 )
 
-func decode(ctx context.Context, r io.Reader, opts ...Opt) (*types.Result, error) {
+func readerToBits(ctx context.Context, r io.Reader, opts ...Opt) ([]types.Bit, error) {
 	c := &Config{
-		InMaxBits:         -1,
-		InCompressionType: compression.None,
+		InMaxBits:          -1,
+		InCompressionType:  compression.None,
+		OutMaxBits:         -1,
+		OutCompressionType: compression.None,
 	}
 	for _, opt := range opts {
 		opt(c)
@@ -38,20 +40,21 @@ func decode(ctx context.Context, r io.Reader, opts ...Opt) (*types.Result, error
 		bits = bits[:bitsCap]
 	}
 
-	return &types.Result{
-		Bits: bits,
-	}, nil
+	return bits, nil
 }
 
-func decodeWithAnalysis(ctx context.Context, r io.Reader, opts ...Opt) (*types.Result, error) {
-	res, err := decode(ctx, r, opts...)
+func readerToBitsWithAnalysis(ctx context.Context, r io.Reader, opts ...Opt) (*types.Result, error) {
+	bits, err := readerToBits(ctx, r, opts...)
 	if err != nil {
 		return nil, err
 	}
 
-	res.Stats = engine.AnalizeBits(res.Bits)
+	stats := engine.AnalizeBits(bits)
 
-	return res, nil
+	return &types.Result{
+		Bits:  bits,
+		Stats: stats,
+	}, nil
 }
 
 func bitsToReader(ctx context.Context, bits []types.Bit, compType compression.CompressionType) (fio.ReaderWithSize, error) {
