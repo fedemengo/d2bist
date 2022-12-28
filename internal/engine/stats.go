@@ -1,8 +1,6 @@
 package engine
 
 import (
-	"log"
-
 	"github.com/fedemengo/f2bist/internal/types"
 )
 
@@ -25,52 +23,32 @@ func min(a, b int) int {
 }
 
 func AnalizeBits(bits []types.Bit) *types.Stats {
-	zeroC, oneC := 0, 0
-	zeroL, oneL := 0, 0
-
 	stats := &types.Stats{
-		ZeroStrings: make(map[int]int),
-		OneStrings:  make(map[int]int),
+		BitsCount: len(bits),
+		ByteCount: len(bits) / 8,
 	}
 
-	for _, c := range bits {
-		switch c {
-		case 0:
-			zeroC++
+	counters := [4]int64{}
+	strLenCount := map[int]map[int64]int{}
+	for i := range counters {
+		strLenCount[i+1] = map[int64]int{}
+	}
 
-			zeroL++
-			if oneL > 0 && oneL < maxStringLen {
-				stats.OneStrings[oneL]++
-			}
-			oneL = 0
-		case 1:
-			oneC++
+	for i, c := range bits {
+		for j := 0; j < len(counters); j++ {
+			counters[j] &= ^(1 << j)
+			counters[j] <<= 1
+			counters[j] += int64(c)
 
-			oneL++
-			if zeroL > 0 && zeroL < maxStringLen {
-				stats.ZeroStrings[zeroL]++
+			if j > i {
+				continue
 			}
-			zeroL = 0
-		default:
-			log.Fatalf("digit %c should not be here", c)
+
+			strLenCount[j+1][counters[j]]++
 		}
-
-		stats.MaxStringLen = min(max(stats.MaxStringLen, max(zeroL, oneL)), maxStringLen)
 	}
 
-	if zeroL > 0 && zeroL < maxStringLen {
-		stats.ZeroStrings[zeroL]++
-	}
-	if oneL > 0 && oneL < maxStringLen {
-		stats.OneStrings[oneL]++
-	}
-
-	stats.MaxStringLen = min(max(stats.MaxStringLen, max(zeroL, oneL)), maxStringLen)
-
-	stats.ZeroCount = zeroC
-	stats.OneCount = oneC
-	stats.SizeBits = len(bits)
-	stats.SizeBytes = len(bits) / 8
+	stats.BitsStrCount = strLenCount
 
 	return stats
 }

@@ -207,7 +207,7 @@ func decode(cliCtx *cli.Context) error {
 	}
 
 	if printStats {
-		outputStats(res.Stats)
+		res.Stats.RenderStats(os.Stderr)
 	}
 
 	if len(pngFileName) > 0 {
@@ -240,7 +240,7 @@ func encode(_ *cli.Context) error {
 	log.Trace().Int("bits", len(res.Bits)).Msg("encoded bits")
 
 	if printStats {
-		outputStats(res.Stats)
+		res.Stats.RenderStats(os.Stderr)
 	}
 
 	if len(pngFileName) > 0 {
@@ -263,34 +263,4 @@ func outputBinaryString(bits []types.Bit) error {
 	}
 
 	return err
-}
-
-func outputStats(stats *types.Stats) {
-	fmt.Fprintf(os.Stderr, `
-bits: %d
-
-0: %d
-1: %d
-`, stats.SizeBits, stats.ZeroCount, stats.OneCount)
-
-	if stats.CompressionStats != nil {
-		stats.MaxStringLen = 0
-	} else {
-		fmt.Fprintln(os.Stderr)
-	}
-
-	for i := 1; i <= stats.MaxStringLen; i++ {
-		zc, oc := stats.ZeroStrings[i], stats.OneStrings[i]
-		fmt.Fprintf(os.Stderr, "l%02d: 0: %9d - 1: %9d | ratio: %.5f\n", i, zc, oc, float64(zc)/float64(oc))
-	}
-
-	if stats.CompressionStats != nil {
-		fmt.Fprintf(os.Stderr, `
-compression ratio: %.3f
-compression algorithm: %s
-`, stats.CompressionStats.CompressionRatio, stats.CompressionStats.CompressionAlgorithm)
-		outputStats(stats.CompressionStats.Stats)
-	} else {
-		fmt.Fprintln(os.Stderr)
-	}
 }
