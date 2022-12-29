@@ -57,7 +57,7 @@ func (s *Stats) RenderStats(w io.Writer) {
 				countStr = countStr[len(countStr)-digits:]
 			}
 
-			fmt.Fprintf(w, "%s: %s - %.3f %%\n", bitsStr[len(bitsStr)-strLen-1:], countStr, percentage)
+			fmt.Fprintf(w, "%s: %s - %.5f %%\n", bitsStr[len(bitsStr)-strLen-1:], countStr, percentage)
 		}
 		if i < len(s.BitsStrCount)-1 {
 			fmt.Fprintln(w)

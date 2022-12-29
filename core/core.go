@@ -148,7 +148,7 @@ func createResult(ctx context.Context, bits []types.Bit, opts ...Opt) (*types.Re
 	result.Stats.CompressionStats = &types.CompressionStats{
 		CompressionRatio:     100 - float64(len(compressedBits)*100)/float64(len(bits)),
 		CompressionAlgorithm: string(c.OutCompressionType),
-		Stats:                engine.AnalizeBits(bits),
+		Stats:                engine.AnalizeBits(compressedBits),
 	}
 
 	return result, nil
