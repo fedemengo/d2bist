@@ -18,6 +18,7 @@ import (
 // the first run to extract the bits data, should always be performed without compression
 // once the raw bits have been read, if they represent compressed data, a run of decompression is in order
 func binStrReaderToBits(ctx context.Context, r io.Reader, opts ...Opt) ([]types.Bit, error) {
+	log := zerolog.Ctx(ctx)
 	c := NewDefaultConfig()
 	for _, opt := range opts {
 		opt(c)
@@ -28,8 +29,14 @@ func binStrReaderToBits(ctx context.Context, r io.Reader, opts ...Opt) ([]types.
 		return nil, err
 	}
 
+	log.Trace().Msgf("read %d bits", len(bits))
+
 	// the input data was copressed, use a compressed reader to decompress it
 	if c.InCompressionType != compression.None {
+		log.Trace().
+			Str("compression", string(c.InCompressionType)).
+			Msg("bits requires decompression")
+
 		// convert compressed bits to byte reader (of compressed data), no additional compression
 		r, err := bitsToReader(ctx, bits, compression.None)
 		if err != nil {

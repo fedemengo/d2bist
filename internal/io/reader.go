@@ -13,18 +13,10 @@ import (
 	"github.com/fedemengo/f2bist/internal/types"
 )
 
-func BitsFromBinStrStdin(ctx context.Context) ([]types.Bit, error) {
-	return BitsFromBinStrReader(ctx, os.Stdin)
-}
-
-func BitsFromBinStrStdinWithCap(ctx context.Context, maxBits int) ([]types.Bit, error) {
-	return BitsFromBinStrReaderWithCap(ctx, os.Stdin, maxBits)
-}
-
 func BitsFromBinStrReaderWithCap(ctx context.Context, r io.Reader, maxBits int) ([]types.Bit, error) {
 	opts := []opt{
 		withMaxBits(maxBits),
-		withTranform(func(b byte) ([]types.Bit, error) {
+		withTransform(func(b byte) ([]types.Bit, error) {
 			switch b {
 			case '0':
 				return []types.Bit{0}, nil
@@ -41,16 +33,7 @@ func BitsFromBinStrReaderWithCap(ctx context.Context, r io.Reader, maxBits int) 
 }
 
 func BitsFromBinStrReader(ctx context.Context, r io.Reader) ([]types.Bit, error) {
-	return BitsFromReader(ctx, r, withTranform(func(b byte) ([]types.Bit, error) {
-		switch b {
-		case '0':
-			return []types.Bit{0}, nil
-		case '1':
-			return []types.Bit{1}, nil
-		default:
-			return []types.Bit{}, types.ErrInvalidBit
-		}
-	}))
+	return BitsFromBinStrReaderWithCap(ctx, r, -1)
 }
 
 func BitsFromByteStdin(ctx context.Context) ([]types.Bit, error) {
@@ -84,7 +67,7 @@ func withMaxBits(n int) opt {
 	}
 }
 
-func withTranform(t tranform) opt {
+func withTransform(t tranform) opt {
 	return func(c *config) {
 		c.transform = t
 	}
@@ -160,7 +143,7 @@ func BitsFromReader(ctx context.Context, r io.Reader, opts ...opt) ([]types.Bit,
 func BitsFromByteReaderWithCap(ctx context.Context, r io.Reader, maxBits int) ([]types.Bit, error) {
 	opts := []opt{
 		withMaxBits(maxBits),
-		withTranform(func(b byte) ([]types.Bit, error) {
+		withTransform(func(b byte) ([]types.Bit, error) {
 			bits := engine.ByteToBits(b)
 			return bits[:], nil
 		}),
