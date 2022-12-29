@@ -218,16 +218,29 @@ func decode(cliCtx *cli.Context) error {
 }
 
 // encode read a binary string and encodes it to the equivalent data
-func encode(_ *cli.Context) error {
+func encode(cliCtx *cli.Context) error {
 	log := logger()
 	ctx := log.WithContext(context.Background())
+
+	filename := cliCtx.Args().First()
+
+	r := os.Stdin
+	if len(filename) != 0 {
+		f, err := os.Open(filename)
+		if err != nil {
+			return err
+		}
+
+		defer f.Close()
+		r = f
+	}
 
 	opts, err := OptsFromFlags()
 	if err != nil {
 		return fmt.Errorf("error parsing input flags: %w", err)
 	}
 
-	res, err := core.Encode(ctx, os.Stdin, opts...)
+	res, err := core.Encode(ctx, r, opts...)
 	if err != nil {
 		return err
 	}
