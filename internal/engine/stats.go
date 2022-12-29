@@ -4,24 +4,6 @@ import (
 	"github.com/fedemengo/f2bist/internal/types"
 )
 
-const (
-	maxStringLen = 32
-)
-
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
 func AnalizeBits(bits []types.Bit) *types.Stats {
 	stats := &types.Stats{
 		BitsCount: len(bits),
