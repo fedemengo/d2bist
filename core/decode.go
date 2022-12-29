@@ -2,59 +2,24 @@ package core
 
 import (
 	"context"
-	"fmt"
 	"io"
 
 	"github.com/rs/zerolog"
 
-	"github.com/fedemengo/f2bist/compression"
 	"github.com/fedemengo/f2bist/internal/types"
 )
 
+// Decode receives byte data in a io.Reader and creates a Result
 func Decode(ctx context.Context, r io.Reader, opts ...Opt) (*types.Result, error) {
 	log := zerolog.Ctx(ctx)
-
-	res, err := readerToBitsWithAnalysis(ctx, r, opts...)
+	bits, err := readerToBits(ctx, r, opts...)
 	if err != nil {
 		return nil, err
 	}
 
-	result := &types.Result{
-		Bits:  res.Bits,
-		Stats: res.Stats,
-	}
+	log.Trace().
+		Int("bits", len(bits)).
+		Msg("bits read from input reader")
 
-	c := &Config{
-		OutMaxBits:         -1,
-		OutCompressionType: compression.None,
-	}
-	for _, opt := range opts {
-		opt(c)
-	}
-
-	if c.OutCompressionType != compression.None {
-		log.Trace().Msg("output requires compression")
-
-		cr, err := bitsToReader(ctx, res.Bits, c.OutCompressionType)
-		if err != nil {
-			return nil, fmt.Errorf("cannot write bytes to compressed reader: %w", err)
-		}
-
-		log.Trace().Int("bits", 8*cr.Size()).Msg("compressed reader ready")
-
-		res, err := readerToBitsWithAnalysis(ctx, cr, WithOutBitsCap(c.OutMaxBits))
-		if err != nil {
-			return nil, fmt.Errorf("error decoding from compressed reader: %w", err)
-		}
-
-		result.Stats.CompressionStats = &types.CompressionStats{
-			CompressionRatio:     100 - float64(len(res.Bits)*100)/float64(len(result.Bits)),
-			CompressionAlgorithm: string(c.OutCompressionType),
-			Stats:                res.Stats,
-		}
-
-		result.Bits = res.Bits
-	}
-
-	return result, nil
+	return createResult(ctx, bits, opts...)
 }

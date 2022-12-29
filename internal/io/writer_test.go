@@ -33,7 +33,7 @@ func TestWriteBitStringToWriter(t *testing.T) {
 
 			s := ""
 			buf := bytes.NewBufferString(s)
-			err := BitsToWriter(buf, tc.bits)
+			err := WriteBits(buf, tc.bits)
 			r.NoError(err)
 
 			a.Equal(tc.expectedString, buf.String())

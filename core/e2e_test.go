@@ -4,8 +4,11 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"os"
 	"testing"
+	"time"
 
+	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -28,9 +31,23 @@ func resultToBinStr(res *types.Result) (io.Reader, error) {
 	return bytes.NewReader([]byte(s)), nil
 }
 
-func TestE2E(t *testing.T) {
+func traceLogger() zerolog.Logger {
+	level := zerolog.Disabled
+	logWriter := zerolog.ConsoleWriter{
+		Out:        os.Stderr,
+		TimeFormat: time.RFC3339,
+		NoColor:    false,
+	}
+	return zerolog.New(logWriter).With().
+		Timestamp().
+		Caller().
+		Logger().
+		Level(level)
+}
 
-	ctx := context.Background()
+func TestE2E(t *testing.T) {
+	log := traceLogger()
+	ctx := log.WithContext(context.Background())
 
 	testCases := []struct {
 		name         string
@@ -118,6 +135,7 @@ func TestE2E(t *testing.T) {
 			var reader io.Reader
 			reader = bytes.NewReader([]byte(tc.data))
 			for i := 0; i < opsLen; i++ {
+				log.Info().Msgf("step %d", i)
 				res, err := tc.ops[i](ctx, reader, tc.opts[i]...)
 				r.NoError(err)
 

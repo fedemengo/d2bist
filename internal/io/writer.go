@@ -55,7 +55,7 @@ func BitsToString(bits []types.Bit, opts ...Opt) string {
 	return sb.String()
 }
 
-func BitsToWriter(w io.Writer, bits []types.Bit) error {
+func WriteBits(w io.Writer, bits []types.Bit) error {
 	// note: we are safe handling bits grouped in bytes
 	// as it's not possible to write anything less than 1 byte https://stackoverflow.com/a/6701236/4712324
 	for i := 0; i < len(bits)/8; i++ {

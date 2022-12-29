@@ -10,6 +10,16 @@ type Config struct {
 	OutCompressionType compression.CompressionType
 }
 
+func NewDefaultConfig() *Config {
+	return &Config{
+		InMaxBits:         -1,
+		InCompressionType: compression.None,
+
+		OutMaxBits:         -1,
+		OutCompressionType: compression.None,
+	}
+}
+
 type Opt func(c *Config)
 
 func WithOutBitsCap(maxBits int) Opt {

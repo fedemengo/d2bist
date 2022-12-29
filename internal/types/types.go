@@ -53,7 +53,7 @@ func (s *Stats) RenderStats(w io.Writer) {
 
 			digits := int(math.Log10(float64(max))) + 1
 			countStr := fmt.Sprintf("%10d", count)
-			if digits < len(countStr) {
+			if digits > 0 && digits < len(countStr) {
 				countStr = countStr[len(countStr)-digits:]
 			}
 

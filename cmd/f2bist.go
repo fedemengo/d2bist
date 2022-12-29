@@ -259,7 +259,7 @@ func outputBinaryString(bits []types.Bit) error {
 		}
 		fmt.Fprintln(os.Stdout, fio.BitsToString(bits, opts...))
 	} else {
-		err = fio.BitsToWriter(os.Stdout, bits)
+		err = fio.WriteBits(os.Stdout, bits)
 	}
 
 	return err
