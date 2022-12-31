@@ -1,4 +1,4 @@
-module github.com/fedemengo/f2bist
+module github.com/fedemengo/d2bist
 
 go 1.19
 

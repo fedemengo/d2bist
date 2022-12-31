@@ -3,7 +3,7 @@ package engine
 import (
 	"testing"
 
-	"github.com/fedemengo/f2bist/internal/types"
+	"github.com/fedemengo/d2bist/internal/types"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -11,11 +11,11 @@ import (
 	zlog "github.com/rs/zerolog/log"
 	"github.com/urfave/cli/v2"
 
-	"github.com/fedemengo/f2bist/core"
-	"github.com/fedemengo/f2bist/internal/flags"
-	"github.com/fedemengo/f2bist/internal/image"
-	fio "github.com/fedemengo/f2bist/internal/io"
-	"github.com/fedemengo/f2bist/internal/types"
+	"github.com/fedemengo/d2bist/core"
+	"github.com/fedemengo/d2bist/internal/flags"
+	"github.com/fedemengo/d2bist/internal/image"
+	fio "github.com/fedemengo/d2bist/internal/io"
+	"github.com/fedemengo/d2bist/internal/types"
 )
 
 var (
@@ -44,7 +44,7 @@ func init() {
 		}, &cli.StringFlag{
 			Name:        "compression",
 			Aliases:     []string{"c"},
-			Usage:       "specify the compression algorithm do compress the output data",
+			Usage:       "specify the compression algorithm to compress the output data",
 			DefaultText: "auto",
 			Destination: &compressionOut,
 		},
@@ -58,7 +58,7 @@ func init() {
 			DefaultText: "none",
 			Action: func(_ *cli.Context, s string) error {
 				if len(s) > 0 && len(s) != 1 {
-					return fmt.Errorf("f2bist: bad separator `%s`", s)
+					return fmt.Errorf("d2bist: bad separator `%s`", s)
 				}
 				separatorRune = rune(s[0])
 
@@ -85,8 +85,9 @@ func init() {
 	app = &cli.App{
 		Suggest:              true,
 		EnableBashCompletion: true,
-		Name:                 "f2bist",
-		Description:          "Handle files as binary strings",
+		Name:                 "d2bist",
+		Description:          "Handle data as binary strings",
+		Usage:                "decode and encode data to bit strings",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:        "rcap",
@@ -95,7 +96,7 @@ func init() {
 			}, &cli.StringFlag{
 				Name:        "compression",
 				Aliases:     []string{"c"},
-				Usage:       "specify the compression algorithm do decompress the input data",
+				Usage:       "specify the compression algorithm to decompress the input data",
 				DefaultText: "auto",
 				Destination: &compressionIn,
 			},

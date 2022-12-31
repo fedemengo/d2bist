@@ -5,21 +5,21 @@
 #### Convert data to bin string
 
 ```
-> echo "random text to png" | f2bist decode -str
+> echo "random text to png" | d2bist decode -str
 01110010011000010110111001100100011011110110110100100000011101000110010101111000011101000010000001110100011011110010000001110000011011100110011100001010
 ```
 
 #### Convert bin string to data
 
 ```
-> echo "01110010011000010110111001100100011011110110110100100000011101000110010101111000011101000010000001110100011011110010000001110000011011100110011100001010" | f2bist encode | xargs echo
+> echo "01110010011000010110111001100100011011110110110100100000011101000110010101111000011101000010000001110100011011110010000001110000011011100110011100001010" | d2bist encode | xargs echo
 random text to png
 ```
 
 #### Convert data to bin string and bin string back to data
 
 ```
-> echo "random text to png" | f2bist decode -str | f2bist encode | xargs echo
+> echo "random text to png" | d2bist decode -str | d2bist encode | xargs echo
 random text to png
 ```
 
@@ -30,7 +30,7 @@ Given the data `random text to png`, its binary representation as image
 <img src="images/text.png" alt="text" width="200"/>
 
 ```
-> echo "random text to png" | f2bist decode -s -str -png text.png
+> echo "random text to png" | d2bist decode -s -str -png text.png
 01110010011000010110111001100100011011110110110100100000011101000110010101111000011101000010000001110100011011110010000001110000011011100110011100001010
 
 bits: 152
@@ -67,42 +67,42 @@ bits: 278536
 Starting from 5000 bits from `ripgrep`
 
 ```
-> f2bist -rcap 5000 decode /usr/local/bin/rg | cat | f2bist decode -s -str 2>&1 >/dev/null | sed -n '2p'
+> d2bist -rcap 5000 decode /usr/local/bin/rg | cat | d2bist decode -s -str 2>&1 >/dev/null | sed -n '2p'
 bits: 5000
 ```
 
 Zip compresses this particular piece of data to about `59%` of its original size
 
 ```
-> f2bist -rcap 5000 decode /usr/local/bin/rg | zip 2>/dev/null | f2bist decode -s -str 2>&1 1>/dev/null | sed -n '2p'
+> d2bist -rcap 5000 decode /usr/local/bin/rg | zip 2>/dev/null | d2bist decode -s -str 2>&1 1>/dev/null | sed -n '2p'
 bits: 2976
 ```
 
 Gzip compresses this particular piece of data to about `39%` of its original size
 
 ```
-> f2bist -rcap 5000 decode /usr/local/bin/rg | gzip | f2bist decode -s -str 2>&1 >/dev/null | sed -n '2p'
+> d2bist -rcap 5000 decode /usr/local/bin/rg | gzip | d2bist decode -s -str 2>&1 >/dev/null | sed -n '2p'
 bits: 1968
 ```
 
 Brotli compresses this particular piece of data to about `32-57%` of its original size, depending on the compression level
 
 ```
-> f2bist -rcap 5000 decode /usr/local/bin/rg | brotli -q 0 | f2bist decode -s -str 2>&1 >/dev/null | sed -n '2p'
+> d2bist -rcap 5000 decode /usr/local/bin/rg | brotli -q 0 | d2bist decode -s -str 2>&1 >/dev/null | sed -n '2p'
 bits: 2896
 ```
 
 ```
-> f2bist -rcap 5000 decode /usr/local/bin/rg | brotli -q 11 | f2bist decode -s -str 2>&1 >/dev/null | sed -n '2p'
+> d2bist -rcap 5000 decode /usr/local/bin/rg | brotli -q 11 | d2bist decode -s -str 2>&1 >/dev/null | sed -n '2p'
 bits: 1696
 ```
 
 #### Testing compression internally
 
-[Supported](https://github.com/fedemengo/f2bist/blob/c038b1b101c3a2839b423e552ecd1823aae0b895/internal/flags/parse.go#L32) compression algorithms
+[Supported](https://github.com/fedemengo/d2bist/blob/c038b1b101c3a2839b423e552ecd1823aae0b895/internal/flags/parse.go#L32) compression algorithms
 
 ```
-> f2bist -rcap 5000 decode -s -c b /usr/local/bin/rg >/dev/null
+> d2bist -rcap 5000 decode -s -c b /usr/local/bin/rg >/dev/null
 bits: 5000
 
 0: 4252 - 0.850 %
@@ -134,7 +134,7 @@ Starting from `10000` pseudo random bytes different compression algorithms produ
 ```
 
 ```
-> cat 10000b-rand | f2bist decode -s >/dev/null
+> cat 10000b-rand | d2bist decode -s >/dev/null
 
 bits: 80000
 
@@ -142,7 +142,7 @@ bits: 80000
 1: 39809
 
 
-> cat 10000b-rand | f2bist decode -c b -s >/dev/null
+> cat 10000b-rand | d2bist decode -c b -s >/dev/null
 
 bits: 80000
 
@@ -157,7 +157,7 @@ bits: 80032
 0: 40209
 1: 39823
 
-> cat 10000b-rand | f2bist decode -c s2 -s >/dev/null
+> cat 10000b-rand | d2bist decode -c s2 -s >/dev/null
 
 bits: 80000
 
@@ -176,7 +176,7 @@ bits: 80144
 In random data, there is no structure that can be compressed to a simpler representation. On the other hand, compressing hamlet as `.txt` file is much more satisfying
 
 ```
-> f2bist decode -s -c b hamlet.txt >/dev/null
+> d2bist decode -s -c b hamlet.txt >/dev/null
 
 bits: 1554696
 
@@ -191,7 +191,7 @@ bits: 502296
 0: 249800
 1: 252496
 
-> f2bist decode -s -c zstd hamlet.txt >/dev/null
+> d2bist decode -s -c zstd hamlet.txt >/dev/null
 
 bits: 1554344
 
@@ -212,14 +212,14 @@ bits: 597424
 To test the decoding/encoding don't alter the data I usually
 
 ```
-> f2bist decode -str hamlet.txt | f2bist encode | diff hamlet.txt - ; echo $?
+> d2bist decode -str hamlet.txt | d2bist encode | diff hamlet.txt - ; echo $?
 0
 ```
 
 with compression
 
 ```
-> f2bist decode -str -c b hamlet.txt | f2bist -c b encode >/dev/null | diff hamlet.txt - ; echo $?
+> d2bist decode -str -c b hamlet.txt | d2bist -c b encode >/dev/null | diff hamlet.txt - ; echo $?
 0
 ```
 

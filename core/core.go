@@ -8,10 +8,10 @@ import (
 
 	"github.com/rs/zerolog"
 
-	"github.com/fedemengo/f2bist/compression"
-	"github.com/fedemengo/f2bist/internal/engine"
-	fio "github.com/fedemengo/f2bist/internal/io"
-	"github.com/fedemengo/f2bist/internal/types"
+	"github.com/fedemengo/d2bist/compression"
+	"github.com/fedemengo/d2bist/internal/engine"
+	fio "github.com/fedemengo/d2bist/internal/io"
+	"github.com/fedemengo/d2bist/internal/types"
 )
 
 // the reader contains a binary string, representing data, possibly with compression

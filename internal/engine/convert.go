@@ -1,6 +1,6 @@
 package engine
 
-import "github.com/fedemengo/f2bist/internal/types"
+import "github.com/fedemengo/d2bist/internal/types"
 
 func BitsToByte(bits [8]types.Bit) byte {
 	b := byte(0)

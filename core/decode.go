@@ -6,7 +6,7 @@ import (
 
 	"github.com/rs/zerolog"
 
-	"github.com/fedemengo/f2bist/internal/types"
+	"github.com/fedemengo/d2bist/internal/types"
 )
 
 // Decode receives byte data in a io.Reader and creates a Result

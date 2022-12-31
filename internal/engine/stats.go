@@ -1,7 +1,7 @@
 package engine
 
 import (
-	"github.com/fedemengo/f2bist/internal/types"
+	"github.com/fedemengo/d2bist/internal/types"
 )
 
 func AnalizeBits(bits []types.Bit) *types.Stats {

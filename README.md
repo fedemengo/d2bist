@@ -1,4 +1,4 @@
-## f2bist
+## d2bist
 
 CLI utility to handle data as binary strings
 
@@ -15,7 +15,7 @@ The need behind it is to have a quick way to visualize programs as binary string
 Analyze the first [1M bits](https://gist.github.com/fedemengo/bb99f9cb5a8491092e3d749a7b5910fa) of PI and generating an image
 
 ```
-curl https://gist.githubusercontent.com/fedemengo/bb99f9cb5a8491092e3d749a7b5910fa/raw/5b0fd1d3ba5f4f4cda41bfad02d598a4ca276ae6/pi_b2_1M_mathematica 2>/dev/null | tail -c1000000 | f2bist encode -s -png pi >/dev/null
+curl https://gist.githubusercontent.com/fedemengo/bb99f9cb5a8491092e3d749a7b5910fa/raw/5b0fd1d3ba5f4f4cda41bfad02d598a4ca276ae6/pi_b2_1M_mathematica 2>/dev/null | tail -c1000000 | d2bist encode -s -png pi >/dev/null
 
 bits: 1000000
 
@@ -39,5 +39,5 @@ bits: 1000000
 
 <img src="examples/images/pi.png" alt="text" width="500"/>
 
-Checkout other usage [examples](https://github.com/fedemengo/f2bist/tree/main/examples)
+Checkout other usage [examples](https://github.com/fedemengo/d2bist/tree/main/examples)
 

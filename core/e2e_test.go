@@ -12,9 +12,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/fedemengo/f2bist/compression"
-	fio "github.com/fedemengo/f2bist/internal/io"
-	"github.com/fedemengo/f2bist/internal/types"
+	"github.com/fedemengo/d2bist/compression"
+	fio "github.com/fedemengo/d2bist/internal/io"
+	"github.com/fedemengo/d2bist/internal/types"
 )
 
 type op func(context.Context, io.Reader, ...Opt) (*types.Result, error)

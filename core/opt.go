@@ -1,6 +1,6 @@
 package core
 
-import "github.com/fedemengo/f2bist/compression"
+import "github.com/fedemengo/d2bist/compression"
 
 type Config struct {
 	InMaxBits         int
