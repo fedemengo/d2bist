@@ -61,7 +61,12 @@ func BitsToByteWriter(ctx context.Context, w io.Writer, bits []types.Bit) error 
 	log := zerolog.Ctx(ctx)
 	// note: we are safe handling bits grouped in bytes
 	// as it's not possible to write anything less than 1 byte https://stackoverflow.com/a/6701236/4712324
-	for i := 0; i < len(bits)/8; i++ {
+	bytesCount := len(bits) / 8
+	if bytesCount*8 < len(bits) {
+		bytesCount++
+	}
+
+	for i := 0; i < bytesCount; i++ {
 		start := i * 8
 		end := min((i+1)*8, len(bits))
 
