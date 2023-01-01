@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"time"
 
@@ -172,12 +173,14 @@ func OptsFromFlags() ([]core.Opt, error) {
 	return options, nil
 }
 
+type operation func(context.Context, io.Reader, ...core.Opt) (*types.Result, error)
+
 // decode read data and decodes it to the binary string
 func decode(cliCtx *cli.Context) error {
 	log := logger()
 	ctx := log.WithContext(context.Background())
 
-	return process(ctx, cliCtx.Args().First())
+	return process(ctx, cliCtx.Args().First(), core.Decode)
 }
 
 // encode read a binary string and encodes it to the equivalent data
@@ -185,10 +188,10 @@ func encode(cliCtx *cli.Context) error {
 	log := logger()
 	ctx := log.WithContext(context.Background())
 
-	return process(ctx, cliCtx.Args().First())
+	return process(ctx, cliCtx.Args().First(), core.Encode)
 }
 
-func process(ctx context.Context, filename string) error {
+func process(ctx context.Context, filename string, op operation) error {
 	r := os.Stdin
 	if len(filename) != 0 {
 		f, err := os.Open(filename)
@@ -205,7 +208,7 @@ func process(ctx context.Context, filename string) error {
 		return fmt.Errorf("error parsing input flags: %w", err)
 	}
 
-	res, err := core.Encode(ctx, r, opts...)
+	res, err := op(ctx, r, opts...)
 	if err != nil {
 		return err
 	}
