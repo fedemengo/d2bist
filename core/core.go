@@ -10,7 +10,7 @@ import (
 
 	"github.com/fedemengo/d2bist/compression"
 	"github.com/fedemengo/d2bist/internal/engine"
-	fio "github.com/fedemengo/d2bist/internal/io"
+	iio "github.com/fedemengo/d2bist/internal/io"
 	"github.com/fedemengo/d2bist/internal/types"
 )
 
@@ -24,7 +24,7 @@ func binStrReaderToBits(ctx context.Context, r io.Reader, opts ...Opt) ([]types.
 		opt(c)
 	}
 
-	bits, err := fio.BitsFromBinStrReaderWithCap(ctx, r, c.InMaxBits)
+	bits, err := iio.BitsFromBinStrReaderWithCap(ctx, r, c.InMaxBits)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func readerToBits(ctx context.Context, r io.Reader, opts ...Opt) ([]types.Bit, e
 		return nil, err
 	}
 
-	bits, err := fio.BitsFromByteReaderWithCap(ctx, cr, c.InMaxBits)
+	bits, err := iio.BitsFromByteReaderWithCap(ctx, cr, c.InMaxBits)
 	if err != nil {
 		return nil, fmt.Errorf("cannot read bits from reader: %w", err)
 	}
@@ -81,7 +81,7 @@ func readerToBits(ctx context.Context, r io.Reader, opts ...Opt) ([]types.Bit, e
 	return bits, nil
 }
 
-func bitsToReader(ctx context.Context, bits []types.Bit, compType compression.CompressionType) (fio.ReaderWithSize, error) {
+func bitsToReader(ctx context.Context, bits []types.Bit, compType compression.CompressionType) (iio.ReaderWithSize, error) {
 	log := zerolog.Ctx(ctx).
 		With().
 		Str("compression", string(compType)).
@@ -97,7 +97,7 @@ func bitsToReader(ctx context.Context, bits []types.Bit, compType compression.Co
 
 	log.Trace().
 		Msg("writing bits to comp writer")
-	if err := fio.WriteBits(cw, bits); err != nil {
+	if err := iio.BitsToByteWriter(ctx, cw, bits); err != nil {
 		return nil, fmt.Errorf("cannot compress bits")
 	}
 
@@ -112,7 +112,7 @@ func bitsToReader(ctx context.Context, bits []types.Bit, compType compression.Co
 
 	cr := bytes.NewReader(buf.Bytes())
 
-	return fio.NewReaderWithSize(cr, buf.Len()), nil
+	return iio.NewReaderWithSize(cr, buf.Len()), nil
 }
 
 func createResult(ctx context.Context, bits []types.Bit, opts ...Opt) (*types.Result, error) {

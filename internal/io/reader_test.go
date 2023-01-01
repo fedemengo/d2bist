@@ -79,7 +79,7 @@ text`,
 
 			s := ""
 			buf := bytes.NewBufferString(s)
-			err = WriteBits(buf, bits)
+			err = BitsToByteWriter(ctx, buf, bits)
 			r.NoError(err)
 
 			bstr := buf.String()

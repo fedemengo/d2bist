@@ -11,6 +11,17 @@ var ErrInvalidBit = errors.New("invalid bit")
 
 type Bit uint8
 
+func (b Bit) ToByte() byte {
+	switch b {
+	case 0:
+		return byte('0')
+	case 1:
+		return byte('1')
+	default:
+		return byte('-')
+	}
+}
+
 type Stats struct {
 	BitsCount int
 	ByteCount int

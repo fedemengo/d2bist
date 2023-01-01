@@ -18,4 +18,7 @@ func TestIntBitsToByte(t *testing.T) {
 
 	b := BitsToByte([8]types.Bit{0, 1, 1, 0, 0, 1, 0, 1})
 	a.Equal("e", string(b))
+
+	b = BitsToByte([8]types.Bit{0, 0, 0, 0, 0, 0, 0, 1})
+	a.Equal(string(byte(1)), string(b))
 }

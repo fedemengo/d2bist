@@ -2,6 +2,7 @@ package io
 
 import (
 	"bytes"
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -23,17 +24,18 @@ func TestWriteBitStringToWriter(t *testing.T) {
 		}, {
 			name:           "two characters and some",
 			bits:           []types.Bit{0, 1, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 1},
-			expectedString: "he",
+			expectedString: "he\xA0",
 		},
 	}
 
+	ctx := context.Background()
 	for _, tc := range testCases {
 		t.Run(tc.name, func(tt *testing.T) {
 			a, r := assert.New(tt), require.New(tt)
 
 			s := ""
 			buf := bytes.NewBufferString(s)
-			err := WriteBits(buf, tc.bits)
+			err := BitsToByteWriter(ctx, buf, tc.bits)
 			r.NoError(err)
 
 			a.Equal(tc.expectedString, buf.String())

@@ -1,12 +1,14 @@
 package io
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"strings"
 
 	"github.com/fedemengo/d2bist/internal/engine"
 	"github.com/fedemengo/d2bist/internal/types"
+	"github.com/rs/zerolog"
 )
 
 func bitToRune(b types.Bit) rune {
@@ -55,7 +57,8 @@ func BitsToString(bits []types.Bit, opts ...Opt) string {
 	return sb.String()
 }
 
-func WriteBits(w io.Writer, bits []types.Bit) error {
+func BitsToByteWriter(ctx context.Context, w io.Writer, bits []types.Bit) error {
+	log := zerolog.Ctx(ctx)
 	// note: we are safe handling bits grouped in bytes
 	// as it's not possible to write anything less than 1 byte https://stackoverflow.com/a/6701236/4712324
 	for i := 0; i < len(bits)/8; i++ {
@@ -63,14 +66,24 @@ func WriteBits(w io.Writer, bits []types.Bit) error {
 		end := min((i+1)*8, len(bits))
 
 		byteVal := [8]types.Bit{}
-		copy(byteVal[:], bits[start:end])
+		bitsStr := [8]byte{}
+		for j := start; j < start+8; j++ {
+			if j < end {
+				byteVal[j-start] = bits[j]
+				bitsStr[j-start] = bits[j].ToByte()
+			} else {
+				bitsStr[j-start] = '-'
+			}
+		}
+		log.Trace().Str("bits", string(bitsStr[:])).Msg("bits to byte conversion")
 
 		n, err := w.Write([]byte{engine.BitsToByte(byteVal)})
 		if err != nil {
 			return err
 		}
-		if n*8 != end-start {
-			return fmt.Errorf("%d bytes written - %d expected", n, end-start+1)
+
+		if n*8 < end-start {
+			return fmt.Errorf("%d bits written - %d expected", n*8, end-start)
 		}
 	}
 

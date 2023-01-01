@@ -14,7 +14,7 @@ import (
 	"github.com/fedemengo/d2bist/core"
 	"github.com/fedemengo/d2bist/internal/flags"
 	"github.com/fedemengo/d2bist/internal/image"
-	fio "github.com/fedemengo/d2bist/internal/io"
+	iio "github.com/fedemengo/d2bist/internal/io"
 	"github.com/fedemengo/d2bist/internal/types"
 )
 
@@ -177,45 +177,7 @@ func decode(cliCtx *cli.Context) error {
 	log := logger()
 	ctx := log.WithContext(context.Background())
 
-	filename := cliCtx.Args().First()
-
-	r := os.Stdin
-	if len(filename) != 0 {
-		f, err := os.Open(filename)
-		if err != nil {
-			return err
-		}
-
-		defer f.Close()
-		r = f
-	}
-
-	opts, err := OptsFromFlags()
-	if err != nil {
-		return fmt.Errorf("error parsing input flags: %w", err)
-	}
-
-	res, err := core.Decode(ctx, r, opts...)
-	if err != nil {
-		return fmt.Errorf("cannot decode: %w", err)
-	}
-
-	log.Trace().Int("bits", len(res.Bits)).Msg("decoded bits")
-
-	err = outputBinaryString(res.Bits)
-	if err != nil {
-		return err
-	}
-
-	if printStats {
-		res.Stats.RenderStats(os.Stderr)
-	}
-
-	if len(pngFileName) > 0 {
-		return image.WriteToPNG(res.Bits, pngFileName)
-	}
-
-	return nil
+	return process(ctx, cliCtx.Args().First())
 }
 
 // encode read a binary string and encodes it to the equivalent data
@@ -223,8 +185,10 @@ func encode(cliCtx *cli.Context) error {
 	log := logger()
 	ctx := log.WithContext(context.Background())
 
-	filename := cliCtx.Args().First()
+	return process(ctx, cliCtx.Args().First())
+}
 
+func process(ctx context.Context, filename string) error {
 	r := os.Stdin
 	if len(filename) != 0 {
 		f, err := os.Open(filename)
@@ -246,12 +210,12 @@ func encode(cliCtx *cli.Context) error {
 		return err
 	}
 
-	err = outputBinaryString(res.Bits)
+	err = outputBinaryString(ctx, res.Bits)
 	if err != nil {
 		return err
 	}
 
-	log.Trace().Int("bits", len(res.Bits)).Msg("encoded bits")
+	zlog.Trace().Int("bits", len(res.Bits)).Msg("encoded bits")
 
 	if printStats {
 		res.Stats.RenderStats(os.Stderr)
@@ -264,16 +228,16 @@ func encode(cliCtx *cli.Context) error {
 	return nil
 }
 
-func outputBinaryString(bits []types.Bit) error {
+func outputBinaryString(ctx context.Context, bits []types.Bit) error {
 	var err error
 	if outputString || isatty.IsTerminal(os.Stdout.Fd()) {
-		opts := []fio.Opt{
-			fio.WithSep(separatorRune),
-			fio.WithSepDistance(count),
+		opts := []iio.Opt{
+			iio.WithSep(separatorRune),
+			iio.WithSepDistance(count),
 		}
-		fmt.Fprintln(os.Stdout, fio.BitsToString(bits, opts...))
+		fmt.Fprintln(os.Stdout, iio.BitsToString(bits, opts...))
 	} else {
-		err = fio.WriteBits(os.Stdout, bits)
+		err = iio.BitsToByteWriter(ctx, os.Stdout, bits)
 	}
 
 	return err

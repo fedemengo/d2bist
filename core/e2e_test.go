@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/fedemengo/d2bist/compression"
-	fio "github.com/fedemengo/d2bist/internal/io"
+	iio "github.com/fedemengo/d2bist/internal/io"
 	"github.com/fedemengo/d2bist/internal/types"
 )
 
@@ -27,7 +27,7 @@ func basicConverter(res *types.Result) (io.Reader, error) {
 }
 
 func resultToBinStr(res *types.Result) (io.Reader, error) {
-	s := fio.BitsToString(res.Bits)
+	s := iio.BitsToString(res.Bits)
 	return bytes.NewReader([]byte(s)), nil
 }
 

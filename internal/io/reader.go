@@ -17,14 +17,11 @@ func BitsFromBinStrReaderWithCap(ctx context.Context, r io.Reader, maxBits int) 
 	opts := []opt{
 		withMaxBits(maxBits),
 		withTransform(func(b byte) ([]types.Bit, error) {
-			switch b {
-			case '0':
-				return []types.Bit{0}, nil
-			case '1':
-				return []types.Bit{1}, nil
-			default:
-				return []types.Bit{}, fmt.Errorf("cannot handle `%c`: %w", b, types.ErrInvalidBit)
+			bit, err := engine.ByteToBit(b)
+			if err != nil {
+				return nil, err
 			}
+			return []types.Bit{bit}, nil
 		}),
 	}
 
@@ -34,6 +31,21 @@ func BitsFromBinStrReaderWithCap(ctx context.Context, r io.Reader, maxBits int) 
 
 func BitsFromBinStrReader(ctx context.Context, r io.Reader) ([]types.Bit, error) {
 	return BitsFromBinStrReaderWithCap(ctx, r, -1)
+}
+
+func BitsFromByteReaderWithCap(ctx context.Context, r io.Reader, maxBits int) ([]types.Bit, error) {
+	opts := []opt{
+		withMaxBits(maxBits),
+		withTransform(func(b byte) ([]types.Bit, error) {
+			bits := engine.ByteToBits(b)
+			return bits[:], nil
+		}),
+	}
+	return BitsFromReader(ctx, r, opts...)
+}
+
+func BitsFromByteReader(ctx context.Context, r io.Reader) ([]types.Bit, error) {
+	return BitsFromByteReaderWithCap(ctx, r, -1)
 }
 
 func BitsFromByteStdin(ctx context.Context) ([]types.Bit, error) {
@@ -138,19 +150,4 @@ func BitsFromReader(ctx context.Context, r io.Reader, opts ...opt) ([]types.Bit,
 
 	return bits, nil
 
-}
-
-func BitsFromByteReaderWithCap(ctx context.Context, r io.Reader, maxBits int) ([]types.Bit, error) {
-	opts := []opt{
-		withMaxBits(maxBits),
-		withTransform(func(b byte) ([]types.Bit, error) {
-			bits := engine.ByteToBits(b)
-			return bits[:], nil
-		}),
-	}
-	return BitsFromReader(ctx, r, opts...)
-}
-
-func BitsFromByteReader(ctx context.Context, r io.Reader) ([]types.Bit, error) {
-	return BitsFromByteReaderWithCap(ctx, r, -1)
 }
