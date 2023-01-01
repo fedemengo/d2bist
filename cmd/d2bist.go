@@ -192,6 +192,8 @@ func encode(cliCtx *cli.Context) error {
 }
 
 func process(ctx context.Context, filename string, op operation) error {
+	log := zerolog.Ctx(ctx)
+
 	r := os.Stdin
 	if len(filename) != 0 {
 		f, err := os.Open(filename)
@@ -218,7 +220,7 @@ func process(ctx context.Context, filename string, op operation) error {
 		return err
 	}
 
-	zlog.Trace().Int("bits", len(res.Bits)).Msg("encoded bits")
+	log.Trace().Int("bits", len(res.Bits)).Msg("encoded bits")
 
 	if printStats {
 		res.Stats.RenderStats(os.Stderr)
