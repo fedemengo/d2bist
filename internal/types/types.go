@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"math"
+
+	"github.com/fedemengo/go-data-structures/heap"
 )
 
 var ErrInvalidBit = errors.New("invalid bit")
@@ -57,19 +59,13 @@ func (s *Stats) RenderStats(w io.Writer) {
 			}
 		}
 
-		for j := start; j < end; j++ {
-			bitsStr := fmt.Sprintf("%064b", j)
-			count := s.BitsStrCount[strLen+1][j]
-			percentage := float64(count) * 1 / float64(total)
-
-			digits := int(math.Log10(float64(max))) + 1
-			countStr := fmt.Sprintf("%10d", count)
-			if digits > 0 && digits < len(countStr) {
-				countStr = countStr[len(countStr)-digits:]
-			}
-
-			fmt.Fprintf(w, "%s: %s - %.5f %%\n", bitsStr[len(bitsStr)-strLen-1:], countStr, percentage)
+		// if not all keys are there we're doing topk
+		if len(s.BitsStrCount[strLen+1]) < int(end-start+1) {
+			s.printTopBistrK(strLen+1, total, max, w)
+		} else {
+			s.printAllBistrK(strLen+1, total, max, start, end, w)
 		}
+
 		if i < len(s.BitsStrCount)-1 {
 			fmt.Fprintln(w)
 		}
@@ -83,6 +79,49 @@ compression algorithm: %s
 		s.CompressionStats.Stats.RenderStats(w)
 	} else {
 		fmt.Fprintln(w)
+	}
+
+}
+
+func (s *Stats) printTopBistrK(kval, total, max int, w io.Writer) {
+	topK := heap.NewHeap(func(e1, e2 heap.Elem) bool {
+		return e1.Val.(int) > e2.Val.(int)
+	})
+
+	for k, v := range s.BitsStrCount[kval] {
+		topK.Push(heap.Elem{Key: k, Val: v})
+	}
+
+	for topK.Size() > 0 {
+		e := topK.Pop()
+		k, v := e.Key.(int64), e.Val.(int)
+		bitsStr := fmt.Sprintf("%064b", k)
+		digits := int(math.Log10(float64(max))) + 1
+		count := v
+
+		countStr := fmt.Sprintf("%10d", count)
+		if digits > 0 && digits < len(countStr) {
+			countStr = countStr[len(countStr)-digits:]
+		}
+		percentage := float64(count) * 1 / float64(total)
+
+		fmt.Fprintf(w, "%s: %s - %.5f %%\n", bitsStr[len(bitsStr)-kval-2:], countStr, percentage)
+	}
+}
+
+func (s *Stats) printAllBistrK(kval, total, max int, start, end int64, w io.Writer) {
+	for j := start; j < end; j++ {
+		bitsStr := fmt.Sprintf("%064b", j)
+		count := s.BitsStrCount[kval][j]
+		percentage := float64(count) * 1 / float64(total)
+
+		digits := int(math.Log10(float64(max))) + 1
+		countStr := fmt.Sprintf("%10d", count)
+		if digits > 0 && digits < len(countStr) {
+			countStr = countStr[len(countStr)-digits:]
+		}
+
+		fmt.Fprintf(w, "%s: %s - %.5f %%\n", bitsStr[len(bitsStr)-kval-2:], countStr, percentage)
 	}
 
 }
