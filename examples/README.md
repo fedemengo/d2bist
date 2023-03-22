@@ -130,7 +130,7 @@ bits: 1696
 Starting from `10000` pseudo random bytes different compression algorithms produce different results
 
 ```
-> cat /dev/random | dd bs=1 count=10000 2>/dev/null > 10000b-rand
+> dd if=/dev/urandom bs=1 count=10000 2>/dev/null > 10000b-rand
 ```
 
 ```
