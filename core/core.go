@@ -128,9 +128,15 @@ func createResult(ctx context.Context, bits []types.Bit, opts ...Opt) (*types.Re
 		Str("outCompression", string(c.OutCompressionType)).
 		Msg("creating result")
 
+	stats := engine.AnalizeBits(
+		bits,
+		engine.WithMaxBlockSize(c.StatsMaxBlockSize),
+		engine.WithTopK(c.StatsTopK),
+	)
+
 	result := &types.Result{
 		Bits:  bits,
-		Stats: engine.AnalizeBits(bits),
+		Stats: stats,
 	}
 
 	if c.OutCompressionType == compression.None {

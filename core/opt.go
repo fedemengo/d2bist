@@ -8,6 +8,9 @@ type Config struct {
 
 	OutMaxBits         int
 	OutCompressionType compression.CompressionType
+
+	StatsMaxBlockSize int
+	StatsTopK         int
 }
 
 func NewDefaultConfig() *Config {
@@ -17,6 +20,9 @@ func NewDefaultConfig() *Config {
 
 		OutMaxBits:         -1,
 		OutCompressionType: compression.None,
+
+		StatsMaxBlockSize: 8,
+		StatsTopK:         -1,
 	}
 }
 
@@ -43,5 +49,17 @@ func WithInBitsCap(maxBits int) Opt {
 func WithInCompression(ct compression.CompressionType) Opt {
 	return func(c *Config) {
 		c.InCompressionType = ct
+	}
+}
+
+func WithStatsMaxBlockSize(maxBlockSize int) Opt {
+	return func(c *Config) {
+		c.StatsMaxBlockSize = maxBlockSize
+	}
+}
+
+func WithStatsTopK(topK int) Opt {
+	return func(c *Config) {
+		c.StatsTopK = topK
 	}
 }

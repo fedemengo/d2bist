@@ -22,6 +22,8 @@ import (
 var (
 	outputString = false
 	printStats   = false
+	topKOutput   = -1
+	maxBlockSize = 8
 
 	readDataCap   = ""
 	compressionIn = ""
@@ -48,8 +50,7 @@ func init() {
 			Usage:       "specify the compression algorithm to compress the output data",
 			DefaultText: "auto",
 			Destination: &compressionOut,
-		},
-		&cli.StringFlag{
+		}, &cli.StringFlag{
 			Name:        "png",
 			Usage:       "write bit string to png file",
 			Destination: &pngFileName,
@@ -70,6 +71,17 @@ func init() {
 			Aliases:     []string{"b"},
 			Usage:       "add a separator after #count bits",
 			Destination: &count,
+			DefaultText: "8",
+		}, &cli.IntFlag{
+			Name:        "topk",
+			Aliases:     []string{"k"},
+			Usage:       "output the top k most frequent substrings",
+			Destination: &topKOutput,
+			DefaultText: "all",
+		}, &cli.IntFlag{
+			Name:        "maxblock",
+			Usage:       "max block size to consider when counting substrings",
+			Destination: &maxBlockSize,
 			DefaultText: "8",
 		}, &cli.BoolFlag{
 			Name:        "stats",
@@ -151,7 +163,9 @@ func logger() zerolog.Logger {
 }
 
 func OptsFromFlags() ([]core.Opt, error) {
-	options := []core.Opt{}
+	options := []core.Opt{
+		core.WithStatsMaxBlockSize(maxBlockSize),
+	}
 
 	if maxBits, err := flags.ParseDataCapToBitsCount(readDataCap); err != nil {
 		return nil, fmt.Errorf("cannot parse data cap flag")
@@ -169,6 +183,10 @@ func OptsFromFlags() ([]core.Opt, error) {
 
 	cOutType := flags.ParseCompressionFlag(compressionOut)
 	options = append(options, core.WithOutCompression(cOutType))
+
+	if topKOutput > 0 {
+		options = append(options, core.WithStatsTopK(topKOutput))
+	}
 
 	return options, nil
 }

@@ -24,11 +24,21 @@ func (b Bit) ToByte() byte {
 	}
 }
 
+type SubstrCount struct {
+	Total  int
+	Length int
+	Counts map[string]int
+
+	SortedSubstrs []string
+	AllCounts     map[string]int
+}
+
 type Stats struct {
 	BitsCount int
 	ByteCount int
 
 	BitsStrCount map[int]map[int64]int
+	SubstrsCount []SubstrCount
 
 	CompressionStats *CompressionStats
 }
@@ -45,28 +55,24 @@ func (s *Stats) RenderStats(w io.Writer) {
 	fmt.Fprintln(w, "bits:", s.BitsCount)
 	fmt.Fprintln(w)
 
-	for i := 0; i < len(s.BitsStrCount); i++ {
-		strLen := i
-		start := int64(0)
-		end := int64(1 << (strLen + 1))
+	for l := 0; l < len(s.SubstrsCount); l++ {
+		substrGroup := s.SubstrsCount[l]
 
 		total, max := 0, 0
-		for j := start; j < end; j++ {
-			count := s.BitsStrCount[strLen+1][j]
+		for _, count := range substrGroup.Counts {
 			total += count
 			if count > max {
 				max = count
 			}
 		}
 
-		// if not all keys are there we're doing topk
-		if len(s.BitsStrCount[strLen+1]) < int(end-start+1) {
-			s.printTopBistrK(strLen+1, total, max, w)
+		if len(substrGroup.Counts) < len(substrGroup.AllCounts) {
+			s.printTopBistrK(max, total, substrGroup, w)
 		} else {
-			s.printAllBistrK(strLen+1, total, max, start, end, w)
+			s.printAllBistrK(max, total, substrGroup, w)
 		}
 
-		if i < len(s.BitsStrCount)-1 {
+		if l < len(s.SubstrsCount)-1 {
 			fmt.Fprintln(w)
 		}
 	}
@@ -83,19 +89,18 @@ compression algorithm: %s
 
 }
 
-func (s *Stats) printTopBistrK(kval, total, max int, w io.Writer) {
+func (s *Stats) printTopBistrK(max, total int, substrGroup SubstrCount, w io.Writer) {
 	topK := heap.NewHeap(func(e1, e2 heap.Elem) bool {
 		return e1.Val.(int) > e2.Val.(int)
 	})
 
-	for k, v := range s.BitsStrCount[kval] {
-		topK.Push(heap.Elem{Key: k, Val: v})
+	for substr, count := range substrGroup.Counts {
+		topK.Push(heap.Elem{Key: substr, Val: count})
 	}
 
 	for topK.Size() > 0 {
 		e := topK.Pop()
-		k, v := e.Key.(int64), e.Val.(int)
-		bitsStr := fmt.Sprintf("%064b", k)
+		bitStr, v := e.Key.(string), e.Val.(int)
 		digits := int(math.Log10(float64(max))) + 1
 		count := v
 
@@ -105,15 +110,18 @@ func (s *Stats) printTopBistrK(kval, total, max int, w io.Writer) {
 		}
 		percentage := float64(count) * 1 / float64(total)
 
-		fmt.Fprintf(w, "%s: %s - %.5f %%\n", bitsStr[len(bitsStr)-kval-2:], countStr, percentage)
+		fmt.Fprintf(w, "%s: %s - %.5f %%\n", bitStr, countStr, percentage)
 	}
 }
 
-func (s *Stats) printAllBistrK(kval, total, max int, start, end int64, w io.Writer) {
-	for j := start; j < end; j++ {
-		bitsStr := fmt.Sprintf("%064b", j)
-		count := s.BitsStrCount[kval][j]
-		percentage := float64(count) * 1 / float64(total)
+func (s *Stats) printAllBistrK(max, total int, substrGroup SubstrCount, w io.Writer) {
+	for _, bitStr := range substrGroup.SortedSubstrs {
+		count, ok := substrGroup.Counts[bitStr]
+		if !ok {
+			continue
+		}
+
+		percentage := float64(count) / float64(total)
 
 		digits := int(math.Log10(float64(max))) + 1
 		countStr := fmt.Sprintf("%10d", count)
@@ -121,9 +129,8 @@ func (s *Stats) printAllBistrK(kval, total, max int, start, end int64, w io.Writ
 			countStr = countStr[len(countStr)-digits:]
 		}
 
-		fmt.Fprintf(w, "%s: %s - %.5f %%\n", bitsStr[len(bitsStr)-kval-2:], countStr, percentage)
+		fmt.Fprintf(w, "%s: %s - %.5f %%\n", bitStr, countStr, percentage)
 	}
-
 }
 
 type CompressionStats struct {
