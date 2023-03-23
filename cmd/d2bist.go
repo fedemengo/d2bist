@@ -24,6 +24,8 @@ var (
 	printStats   = false
 	topKOutput   = -1
 	maxBlockSize = 8
+	blockSize    = -1
+	entropyChunk = 2
 
 	readDataCap   = ""
 	compressionIn = ""
@@ -79,10 +81,18 @@ func init() {
 			Destination: &topKOutput,
 			DefaultText: "all",
 		}, &cli.IntFlag{
-			Name:        "maxblock",
-			Usage:       "max block size to consider when counting substrings",
+			Name:        "maxchunk",
+			Usage:       "max chunk size of bits consider when counting substrings",
 			Destination: &maxBlockSize,
 			DefaultText: "8",
+		}, &cli.IntFlag{
+			Name:        "chunk",
+			Usage:       "exact chunk size to consider when counting substrings",
+			Destination: &blockSize,
+		}, &cli.IntFlag{
+			Name:        "echunk",
+			Usage:       "exact chunk size to consider when calculating a chunk entropy substrings",
+			Destination: &entropyChunk,
 		}, &cli.BoolFlag{
 			Name:        "stats",
 			Aliases:     []string{"s"},
@@ -163,9 +173,7 @@ func logger() zerolog.Logger {
 }
 
 func OptsFromFlags() ([]core.Opt, error) {
-	options := []core.Opt{
-		core.WithStatsMaxBlockSize(maxBlockSize),
-	}
+	options := []core.Opt{}
 
 	if maxBits, err := flags.ParseDataCapToBitsCount(readDataCap); err != nil {
 		return nil, fmt.Errorf("cannot parse data cap flag")
@@ -183,6 +191,19 @@ func OptsFromFlags() ([]core.Opt, error) {
 
 	cOutType := flags.ParseCompressionFlag(compressionOut)
 	options = append(options, core.WithOutCompression(cOutType))
+
+	if blockSize > 0 {
+		options = append(options, core.WithStatsBlockSize(blockSize))
+		if entropyChunk > blockSize {
+			return nil, fmt.Errorf("entropy chunk size cannot be greater than block size")
+		}
+		if entropyChunk > 0 && blockSize%entropyChunk != 0 {
+			return nil, fmt.Errorf("entropy chunk size must be a multiple of block size")
+		}
+		options = append(options, core.WithStatsEntropyChunk(entropyChunk))
+	} else {
+		options = append(options, core.WithStatsMaxBlockSize(maxBlockSize))
+	}
 
 	if topKOutput > 0 {
 		options = append(options, core.WithStatsTopK(topKOutput))

@@ -7,6 +7,10 @@ import (
 	"math"
 
 	"github.com/fedemengo/go-data-structures/heap"
+	"gonum.org/v1/plot"
+	"gonum.org/v1/plot/plotter"
+	"gonum.org/v1/plot/plotutil"
+	"gonum.org/v1/plot/vg"
 )
 
 var ErrInvalidBit = errors.New("invalid bit")
@@ -41,6 +45,7 @@ type Stats struct {
 	SubstrsCount []SubstrCount
 
 	CompressionStats *CompressionStats
+	Entropy          []float64
 }
 
 func (s *Stats) RenderStats(w io.Writer) {
@@ -75,6 +80,10 @@ func (s *Stats) RenderStats(w io.Writer) {
 		if l < len(s.SubstrsCount)-1 {
 			fmt.Fprintln(w)
 		}
+	}
+
+	if len(s.Entropy) > 0 {
+		renderEntropyChart(s.Entropy)
 	}
 
 	if s.CompressionStats != nil {
@@ -130,6 +139,30 @@ func (s *Stats) printAllBistrK(max, total int, substrGroup SubstrCount, w io.Wri
 		}
 
 		fmt.Fprintf(w, "%s: %s - %.5f %%\n", bitStr, countStr, percentage)
+	}
+}
+
+func renderEntropyChart(entropy []float64) {
+	p := plot.New()
+
+	//p.X.Tick.Marker = plot.TickerFunc(func(min, max float64) []plot.Tick {
+	//	return nil
+	//})
+
+	points := make(plotter.XYs, len(entropy))
+	for i, e := range entropy {
+		points[i].X = float64(i)
+		points[i].Y = e
+	}
+
+	err := plotutil.AddLinePoints(p, points)
+	if err != nil {
+		panic(err)
+	}
+
+	// Save the plot to a PNG file.
+	if err := p.Save(25*vg.Centimeter, 20*vg.Centimeter, "entropy.png"); err != nil {
+		panic(err)
 	}
 }
 

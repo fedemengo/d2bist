@@ -9,6 +9,8 @@ type Config struct {
 	OutMaxBits         int
 	OutCompressionType compression.CompressionType
 
+	StatsBlockSize    int
+	StatsEntropyChunk int
 	StatsMaxBlockSize int
 	StatsTopK         int
 }
@@ -55,6 +57,18 @@ func WithInCompression(ct compression.CompressionType) Opt {
 func WithStatsMaxBlockSize(maxBlockSize int) Opt {
 	return func(c *Config) {
 		c.StatsMaxBlockSize = maxBlockSize
+	}
+}
+
+func WithStatsBlockSize(blockSize int) Opt {
+	return func(c *Config) {
+		c.StatsBlockSize = blockSize
+	}
+}
+
+func WithStatsEntropyChunk(entropyChunk int) Opt {
+	return func(c *Config) {
+		c.StatsEntropyChunk = entropyChunk
 	}
 }
 

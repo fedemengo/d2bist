@@ -128,11 +128,17 @@ func createResult(ctx context.Context, bits []types.Bit, opts ...Opt) (*types.Re
 		Str("outCompression", string(c.OutCompressionType)).
 		Msg("creating result")
 
-	stats := engine.AnalizeBits(
-		bits,
+	engineOpts := []engine.Opt{
 		engine.WithMaxBlockSize(c.StatsMaxBlockSize),
 		engine.WithTopK(c.StatsTopK),
-	)
+		engine.WithEntropyChunk(c.StatsEntropyChunk),
+	}
+
+	if c.StatsBlockSize > 0 {
+		engineOpts = append(engineOpts, engine.WithBlockSize(c.StatsBlockSize))
+	}
+
+	stats := engine.AnalizeBits(bits, engineOpts...)
 
 	result := &types.Result{
 		Bits:  bits,
