@@ -129,8 +129,16 @@ func AnalizeBits(bits []types.Bit, opts ...Opt) *types.Stats {
 		return stats
 	}
 
+	min := func(a, b int) int {
+		if a < b {
+			return a
+		}
+		return b
+	}
+
 	for i := 0; i < len(bits); i += o.blockSize {
-		chunk := bits[i : i+o.blockSize]
+		chunk := make([]types.Bit, o.blockSize)
+		copy(chunk, bits[i:min(i+o.blockSize, len(bits))])
 		entropy := calcEntropy(chunk, o.entropyChunk)
 		stats.Entropy = append(stats.Entropy, entropy)
 	}
@@ -148,6 +156,9 @@ func shannonEntropy(chunk []types.Bit, eChunk int) float64 {
 	for i := 0; i < 1<<eChunk; i += eChunk {
 		nBits, _ := IntToBits(int64(i), eChunk)
 		nDec, _ := BitsToInt(nBits)
+		if int64(i) != nDec {
+			// error
+		}
 		allBitsSubstr = append(allBitsSubstr, int(nDec))
 	}
 
