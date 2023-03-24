@@ -164,8 +164,6 @@ func renderEntropyChart(entropy []float64) {
 		x[i] = float64(i)
 		y[i] = e
 
-		fmt.Println(i, e)
-
 		if e > yMax {
 			yMax = e
 		}

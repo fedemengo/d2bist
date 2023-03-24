@@ -176,7 +176,7 @@ func shannonEntropy(chunk []types.Bit, eChunk int) float64 {
 		}
 	}
 
-	return entropy
+	return 1 - entropy
 }
 
 func calcTopK(k int, counterForLen map[string]int) map[string]int {
