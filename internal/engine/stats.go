@@ -1,8 +1,7 @@
 package engine
 
 import (
-	"math"
-	"sort"
+	"context"
 
 	"github.com/fedemengo/go-data-structures/heap"
 
@@ -15,17 +14,17 @@ const (
 )
 
 type analysisOpt struct {
-	topK         int
+	topKFreq     int
 	maxBlockSize int
 	blockSize    int
-	entropyChunk int
+	symbolLen    int
 }
 
 type Opt func(*analysisOpt)
 
-func WithTopK(topK int) Opt {
+func WithTopKFreq(topKFreq int) Opt {
 	return func(o *analysisOpt) {
-		o.topK = topK
+		o.topKFreq = topKFreq
 	}
 }
 
@@ -41,18 +40,18 @@ func WithBlockSize(blockSize int) Opt {
 	}
 }
 
-func WithEntropyChunk(chunkSize int) Opt {
+func WithSymbolLen(chunkSize int) Opt {
 	return func(o *analysisOpt) {
-		o.entropyChunk = chunkSize
+		o.symbolLen = chunkSize
 	}
 }
 
 // AnalizeBits count the occurences of bit string of different length
 //
 // Using a sliding window, bits string up to length = L (4) are counted in O(N), O(L*N) in general
-func AnalizeBits(bits []types.Bit, opts ...Opt) *types.Stats {
+func AnalizeBits(ctx context.Context, bits []types.Bit, opts ...Opt) *types.Stats {
 	o := &analysisOpt{
-		topK:         defaultTopK,
+		topKFreq:     defaultTopK,
 		maxBlockSize: defaultMaxBlockSize,
 		blockSize:    -1,
 	}
@@ -71,6 +70,7 @@ func AnalizeBits(bits []types.Bit, opts ...Opt) *types.Stats {
 	counterForLen := map[int]map[string]int{}
 
 	calculateEntropy := false
+	// if blockSize is set, calculate entropy for that window size
 	if o.blockSize > 0 {
 		calculateEntropy = true
 		accumulators = make([]string, 1)
@@ -84,19 +84,18 @@ func AnalizeBits(bits []types.Bit, opts ...Opt) *types.Stats {
 		}
 	}
 
-	for j := 0; j < len(accumulators); j++ {
-		windowSize := windows[j]
-
+	// count all bit strings of length windowSize
+	for j, windowSize := range windows {
 		// count all bit strings of length windowSize
 		for i, b := range bits {
 			currAcc := accumulators[j]
 			if len(accumulators[j]) > windowSize {
-				currAcc = accumulators[j][1:]
+				currAcc = accumulators[j][1:] // exit the window
 			}
-			nextAcc := currAcc + string(b.ToByte())
+			nextAcc := currAcc + string(b.ToByte()) // enter the window
 			accumulators[j] = nextAcc
 
-			// window of length windowSize is not full yet
+			// window is not full yet
 			if i+1 < windowSize {
 				continue
 			}
@@ -105,16 +104,15 @@ func AnalizeBits(bits []types.Bit, opts ...Opt) *types.Stats {
 		}
 	}
 
-	for j := 0; j < len(accumulators); j++ {
-		windowSize := windows[j]
+	// select top K most frequent bit strings
+	for _, windowSize := range windows {
+		topKSelected := getTopKFreqSubstrs(o.topKFreq, counterForLen[windowSize])
 
 		subtrs := []string{}
 		for substr := range counterForLen[windowSize] {
 			subtrs = append(subtrs, substr)
 		}
-		sort.Strings(subtrs)
-
-		topKSelected := calcTopK(o.topK, counterForLen[windowSize])
+		//sort.Strings(subtrs)
 
 		stats.SubstrsCount = append(stats.SubstrsCount, types.SubstrCount{
 			Length:        windowSize,
@@ -129,57 +127,20 @@ func AnalizeBits(bits []types.Bit, opts ...Opt) *types.Stats {
 		return stats
 	}
 
-	min := func(a, b int) int {
-		if a < b {
-			return a
-		}
-		return b
+	shannon := types.NewShannonEntropy()
+	for i := 0; i < len(bits); i += o.blockSize {
+		nextBlockSize := min(o.blockSize, len(bits)-i)
+		chunk := bits[i : i+nextBlockSize]
+		entropy := ShannonEntropy(chunk, o.symbolLen)
+		shannon.Values = append(shannon.Values, entropy)
 	}
 
-	for i := 0; i < len(bits); i += o.blockSize {
-		chunk := make([]types.Bit, o.blockSize)
-		copy(chunk, bits[i:min(i+o.blockSize, len(bits))])
-		entropy := calcEntropy(chunk, o.entropyChunk)
-		stats.Entropy = append(stats.Entropy, entropy)
-	}
+	stats.Entropy = append(stats.Entropy, shannon)
 
 	return stats
 }
 
-func calcEntropy(chunk []types.Bit, eChunk int) float64 {
-	return shannonEntropy(chunk, eChunk)
-}
-
-func shannonEntropy(chunk []types.Bit, eChunk int) float64 {
-
-	allBitsSubstr := []int{}
-	for i := 0; i < 1<<eChunk; i += eChunk {
-		nBits, _ := IntToBits(int64(i), eChunk)
-		nDec, _ := BitsToInt(nBits)
-		if int64(i) != nDec {
-			// error
-		}
-		allBitsSubstr = append(allBitsSubstr, int(nDec))
-	}
-
-	counts := map[int]int{}
-	for i := 0; i < len(chunk); i += eChunk {
-		nDec, _ := BitsToInt(chunk[i : i+eChunk])
-		counts[int(nDec)]++
-	}
-
-	entropy := float64(0)
-	for _, bitStr := range allBitsSubstr {
-		pX := float64(counts[bitStr]) / float64(len(chunk))
-		if pX > 0 {
-			entropy -= pX * math.Log2(pX)
-		}
-	}
-
-	return 1 - entropy
-}
-
-func calcTopK(k int, counterForLen map[string]int) map[string]int {
+func getTopKFreqSubstrs(k int, counterForLen map[string]int) map[string]int {
 	if k <= 0 {
 		return counterForLen
 	}
@@ -208,4 +169,11 @@ func calcTopK(k int, counterForLen map[string]int) map[string]int {
 	}
 
 	return topKSelected
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }

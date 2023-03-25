@@ -28,29 +28,27 @@ func BitsToByte(bits [8]types.Bit) byte {
 	return b
 }
 
-func BitsToInt(bits []types.Bit) (int64, error) {
+func BitsToInt(bits []types.Bit) (uint64, error) {
 	if len(bits) > 64 {
 		return 0, fmt.Errorf("cannot convert %d bits to int64", len(bits))
 	}
-	v := int64(0)
+	v := uint64(0)
 	for i, b := range bits {
-		v += int64(b) << uint(len(bits)-1-i)
+		v += uint64(b) << uint(len(bits)-1-i)
 	}
 
 	return v, nil
 }
 
-func IntToBits(n int64, bitsCount int) ([]types.Bit, error) {
+func IntToBits(n uint64, bitsCount int) ([]types.Bit, error) {
 	if n >= 1<<bitsCount {
 		return nil, fmt.Errorf("number %d cannot be represented in %d bits", n, bitsCount)
 	}
 
 	bits := make([]types.Bit, bitsCount)
-	i := bitsCount - 1
-	for n > 0 {
+	for i := bitsCount - 1; n > 0; i-- {
 		bits[i] = types.Bit(n % 2)
-		i--
-		n /= 2
+		n >>= 1
 	}
 
 	return bits, nil

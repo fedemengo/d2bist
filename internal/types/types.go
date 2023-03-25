@@ -44,6 +44,15 @@ type SubstrCount struct {
 	AllCounts     map[string]int
 }
 
+type Entropy struct {
+	Name   string
+	Values []float64
+}
+
+func NewShannonEntropy() *Entropy {
+	return &Entropy{Name: "Shannon"}
+}
+
 type Stats struct {
 	BitsCount int
 	ByteCount int
@@ -52,7 +61,7 @@ type Stats struct {
 	SubstrsCount []SubstrCount
 
 	CompressionStats *CompressionStats
-	Entropy          []float64
+	Entropy          []*Entropy
 }
 
 func (s *Stats) RenderStats(w io.Writer) {
@@ -149,7 +158,7 @@ func (s *Stats) printAllBistrK(max, total int, substrGroup SubstrCount, w io.Wri
 	}
 }
 
-func renderEntropyChart(entropy []float64) {
+func renderEntropyChart(entropies []*Entropy) {
 	name := fmt.Sprintf("entropy-%d", time.Now().Unix())
 	dumper := NewDumper(name, 1, 1, 1300, 800)
 	defer dumper.Close()
@@ -157,27 +166,6 @@ func renderEntropyChart(entropy []float64) {
 	pl := chart.ScatterChart{Title: "data entropy"}
 	pl.Key.Pos = "itl"
 	pl.Key.Hide = true
-
-	x, y := make([]float64, len(entropy)), make([]float64, len(entropy))
-	yMax := 0.0
-	for i, e := range entropy {
-		x[i] = float64(i)
-		y[i] = e
-
-		if e > yMax {
-			yMax = e
-		}
-	}
-
-	pl.AddDataPair(
-		"entropy",
-		x, y,
-		chart.PlotStyleLines,
-		chart.Style{
-			Symbol:      0,
-			SymbolColor: color.NRGBA{0xff, 0x00, 0x00, 0xff},
-			LineStyle:   chart.SolidLine,
-		})
 
 	pl.YRange.MinMode.Fixed = true
 	pl.YRange.MinMode.Value = 0
@@ -190,18 +178,41 @@ func renderEntropyChart(entropy []float64) {
 	}
 	pl.YRange.TicSetting.Mirror = 0
 
+	maxEntropyPoints := 0
+	for _, e := range entropies {
+		entropy := e.Values
+		if len(entropy) > maxEntropyPoints {
+			maxEntropyPoints = len(entropy)
+		}
+
+		x, y := make([]float64, len(entropy)), make([]float64, len(entropy))
+		for i, e := range entropy {
+			x[i] = float64(i)
+			y[i] = e
+		}
+
+		pl.AddDataPair(
+			e.Name,
+			x, y,
+			chart.PlotStyleLines,
+			chart.Style{
+				Symbol:      0,
+				SymbolColor: color.NRGBA{0xff, 0x00, 0x00, 0xff},
+				LineStyle:   chart.SolidLine,
+			})
+	}
+
 	pl.XRange.MinMode.Fixed = true
 	pl.XRange.MinMode.Value = 0
 	pl.XRange.MaxMode.Fixed = true
-	pl.XRange.MaxMode.Value = float64(len(entropy))
+	pl.XRange.MaxMode.Value = float64(maxEntropyPoints)
 
-	pl.XRange.TicSetting.Delta = float64(len(entropy) / 5)
+	pl.XRange.TicSetting.Delta = float64(maxEntropyPoints / 5)
 	pl.XRange.TicSetting.Mirror = 0
 	pl.XRange.TicSetting.Grid = chart.GridOff
 	pl.XRange.Label = "offset"
 
 	dumper.Plot(&pl)
-
 	fmt.Println("entropy chart saved to", name+".svg")
 }
 

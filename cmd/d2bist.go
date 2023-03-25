@@ -25,7 +25,7 @@ var (
 	topKOutput   = -1
 	maxBlockSize = 8
 	blockSize    = -1
-	entropyChunk = 2
+	symbolLen    = 2
 
 	readDataCap   = ""
 	compressionIn = ""
@@ -90,9 +90,9 @@ func init() {
 			Usage:       "exact chunk size to consider when counting substrings",
 			Destination: &blockSize,
 		}, &cli.IntFlag{
-			Name:        "echunk",
-			Usage:       "exact chunk size to consider when calculating a chunk entropy substrings",
-			Destination: &entropyChunk,
+			Name:        "slen",
+			Usage:       "length of unitary symbol used when calculating data entropy",
+			Destination: &symbolLen,
 		}, &cli.BoolFlag{
 			Name:        "stats",
 			Aliases:     []string{"s"},
@@ -194,13 +194,13 @@ func OptsFromFlags() ([]core.Opt, error) {
 
 	if blockSize > 0 {
 		options = append(options, core.WithStatsBlockSize(blockSize))
-		if entropyChunk > blockSize {
+		if symbolLen > blockSize {
 			return nil, fmt.Errorf("entropy chunk size cannot be greater than block size")
 		}
-		if entropyChunk > 0 && blockSize%entropyChunk != 0 {
+		if symbolLen > 0 && blockSize%symbolLen != 0 {
 			return nil, fmt.Errorf("entropy chunk size must be a multiple of block size")
 		}
-		options = append(options, core.WithStatsEntropyChunk(entropyChunk))
+		options = append(options, core.WithStatsSymbolLen(symbolLen))
 	} else {
 		options = append(options, core.WithStatsMaxBlockSize(maxBlockSize))
 	}
