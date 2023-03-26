@@ -209,6 +209,8 @@ func OptsFromFlags() ([]core.Opt, error) {
 		options = append(options, core.WithStatsTopK(topKOutput))
 	}
 
+	options = append(options, core.WithEntropyPlotName(fmt.Sprintf("entropy-%d", time.Now().Unix())))
+
 	return options, nil
 }
 

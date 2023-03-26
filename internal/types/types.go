@@ -10,7 +10,6 @@ import (
 	"io"
 	"math"
 	"os"
-	"time"
 
 	svg "github.com/ajstarks/svgo"
 	"github.com/vdobler/chart"
@@ -61,6 +60,7 @@ type Stats struct {
 	SubstrsCount []SubstrCount
 
 	CompressionStats *CompressionStats
+	EntropyPlotName  string
 	Entropy          []*Entropy
 }
 
@@ -99,7 +99,7 @@ func (s *Stats) RenderStats(w io.Writer) {
 	}
 
 	if len(s.Entropy) > 0 {
-		renderEntropyChart(s.Entropy)
+		renderEntropyChart(s.EntropyPlotName, s.Entropy)
 	}
 
 	if s.CompressionStats != nil {
@@ -158,9 +158,8 @@ func (s *Stats) printAllBistrK(max, total int, substrGroup SubstrCount, w io.Wri
 	}
 }
 
-func renderEntropyChart(entropies []*Entropy) {
-	name := fmt.Sprintf("entropy-%d", time.Now().Unix())
-	dumper := NewDumper(name, 1, 1, 1300, 800)
+func renderEntropyChart(plotName string, entropies []*Entropy) {
+	dumper := NewDumper(plotName, 1, 1, 1300, 800)
 	defer dumper.Close()
 
 	pl := chart.ScatterChart{Title: "data entropy"}
@@ -213,7 +212,6 @@ func renderEntropyChart(entropies []*Entropy) {
 	pl.XRange.Label = "offset"
 
 	dumper.Plot(&pl)
-	fmt.Println("entropy chart saved to", name+".svg")
 }
 
 type Dumper struct {

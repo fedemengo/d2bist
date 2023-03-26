@@ -1,18 +1,22 @@
 package core
 
-import "github.com/fedemengo/d2bist/compression"
+import (
+	"github.com/fedemengo/d2bist/compression"
+)
 
 type Config struct {
-	InMaxBits         int
-	InCompressionType compression.CompressionType
+	InMaxBits         int                         `json:"in_max_bits"`
+	InCompressionType compression.CompressionType `json:"in_compression_type"`
 
-	OutMaxBits         int
-	OutCompressionType compression.CompressionType
+	OutMaxBits         int                         `json:"out_max_bits"`
+	OutCompressionType compression.CompressionType `json:"out_compression_type"`
 
-	StatsBlockSize    int
-	StatsSymbolLen    int
-	StatsMaxBlockSize int
-	StatsTopK         int
+	StatsBlockSize    int `json:"stats_block_size"`
+	StatsSymbolLen    int `json:"stats_symbol_len"`
+	StatsMaxBlockSize int `json:"stats_max_block_size"`
+	StatsTopK         int `json:"stats_top_k"`
+
+	EntropyPlotName string `json:"entropy_plot_name"`
 }
 
 func NewDefaultConfig() *Config {
@@ -75,5 +79,11 @@ func WithStatsSymbolLen(entropyChunk int) Opt {
 func WithStatsTopK(topK int) Opt {
 	return func(c *Config) {
 		c.StatsTopK = topK
+	}
+}
+
+func WithEntropyPlotName(name string) Opt {
+	return func(c *Config) {
+		c.EntropyPlotName = name
 	}
 }

@@ -139,6 +139,7 @@ func createResult(ctx context.Context, bits []types.Bit, opts ...Opt) (*types.Re
 	}
 
 	stats := engine.AnalizeBits(ctx, bits, engineOpts...)
+	stats.EntropyPlotName = c.EntropyPlotName
 
 	result := &types.Result{
 		Bits:  bits,

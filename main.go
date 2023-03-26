@@ -5,5 +5,14 @@ import (
 )
 
 func main() {
+
+	//p := profile.New(
+	//	profile.CPUProfile,
+	//	profile.MemProfile,
+	//	profile.TraceProfile,
+	//)
+
+	//defer p.Start().Stop()
+
 	cmd.Run()
 }
