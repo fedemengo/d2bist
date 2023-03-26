@@ -26,14 +26,9 @@ func ShannonEntropy(ctx context.Context, chunk []types.Bit, symbolLen int) float
 		counts[bitsInt]++
 	}
 
-	// opted for a more numerically stable version of the formula
-	//
-	// symbolsInChunk := chunkLen / symbolLen       // in 128 bits there are 32 symbols of 4 bits each
-	// possibleSymbols := 1 << uint(symbolsInChunk) // 2^32 - all possible symbols
 	entropy := float64(0)
 	for intBitsValue := range counts {
 
-		//pX := float64(counts[intBitsValue]) / float64(possibleSymbols)
 		pX := float64(counts[intBitsValue]) / (float64(chunkLen) / float64(symbolLen))
 		e := float64(0)
 		if pX > 0 {
@@ -51,7 +46,7 @@ func ShannonEntropy(ctx context.Context, chunk []types.Bit, symbolLen int) float
 	}
 
 	// normalize the entropy in the range [0, 1]
-	entropy /= math.Log2(float64(chunkLen) / float64(symbolLen))
+	entropy /= float64(symbolLen)
 
 	return entropy
 }

@@ -75,38 +75,29 @@ func TestBitsWindow(t *testing.T) {
 }
 
 func TestShannongEntropy(t *testing.T) {
-	bits := make([][]types.Bit, 16)
-	bits[0], _ = engine.IntToBits(0, 8)
-	bits[1], _ = engine.IntToBits(1, 8)
-	bits[2], _ = engine.IntToBits(2, 8)
-	bits[3], _ = engine.IntToBits(3, 8)
-	bits[4], _ = engine.IntToBits(4, 8)
-	bits[5], _ = engine.IntToBits(5, 8)
-	bits[6], _ = engine.IntToBits(6, 8)
-	bits[7], _ = engine.IntToBits(7, 8)
-	bits[8], _ = engine.IntToBits(8, 8)
-	bits[9], _ = engine.IntToBits(9, 8)
-	bits[10], _ = engine.IntToBits(10, 8)
-	bits[11], _ = engine.IntToBits(11, 8)
-	bits[12], _ = engine.IntToBits(12, 8)
-	bits[13], _ = engine.IntToBits(13, 8)
-	bits[14], _ = engine.IntToBits(14, 8)
-	bits[15], _ = engine.IntToBits(15, 8)
+
+	bits32 := make([][]types.Bit, 32)
+	for i := range bits32 {
+		bits32[i], _ = engine.IntToBits(uint64(i), 5)
+	}
 
 	testCases := []struct {
 		name          string
 		bits          []types.Bit
+		expectedLen   int
 		lenSymbol     int
 		expectedValue float64
 	}{
 		{
 			name:          "zero entropy",
 			bits:          nZeros(100),
+			expectedLen:   100,
 			lenSymbol:     2,
 			expectedValue: 0,
 		}, {
 			name:          "max entropy",
 			bits:          []types.Bit{0, 0, 0, 1, 1, 0, 1, 1},
+			expectedLen:   8,
 			lenSymbol:     2,
 			expectedValue: 1,
 		}, {
@@ -115,12 +106,26 @@ func TestShannongEntropy(t *testing.T) {
 				[]types.Bit{0, 0, 0, 0, 0, 0, 0, 1},
 				nZeros(120)...,
 			),
+			expectedLen:   128,
 			lenSymbol:     8,
-			expectedValue: 0.337,
+			expectedValue: 0.0422,
 		}, {
-			name:          "analytical max test, 128 bits, 8 bit symbol",
-			bits:          flattenBits(bits),
-			lenSymbol:     8,
+			name:          "analytical max test, 160 bits, 5 bit symbol",
+			bits:          flattenBits(bits32),
+			expectedLen:   160,
+			lenSymbol:     5,
+			expectedValue: 1,
+		}, {
+			name:          "analytical not max test, 9 bits, 3 bit symbol",
+			bits:          []types.Bit{0, 0, 0, 0, 0, 1, 0, 1, 1},
+			expectedLen:   9,
+			lenSymbol:     3,
+			expectedValue: 0.529,
+		}, {
+			name:          "analytical max test, 24 bits, 3 bit symbol",
+			bits:          []types.Bit{0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1},
+			expectedLen:   24,
+			lenSymbol:     3,
 			expectedValue: 1,
 		},
 	}
@@ -132,6 +137,7 @@ func TestShannongEntropy(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			assert := assert.New(t)
+			assert.Equal(tc.expectedLen, len(tc.bits))
 
 			e := engine.ShannonEntropy(ctx, tc.bits, tc.lenSymbol)
 
