@@ -39,5 +39,9 @@ bits: 1000000
 
 <img src="examples/images/pi.png" alt="text" width="500"/>
 
+Plot the entropy of PI calculated on chunks of 4096 bits with symbols of 8 bits
+
+<img src="./examples/images/entropy-pi-4096-8.png" alt="text" width="500"/>
+
 Checkout other usage [examples](https://github.com/fedemengo/d2bist/tree/main/examples)
 
