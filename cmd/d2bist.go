@@ -38,6 +38,10 @@ var (
 	count         = 8
 )
 
+var (
+	maxSymbolLen = 16
+)
+
 var app *cli.App
 
 func init() {
@@ -172,7 +176,9 @@ func logger() zerolog.Logger {
 		Level(level)
 }
 
-func OptsFromFlags() ([]core.Opt, error) {
+func OptsFromFlags(ctx context.Context) ([]core.Opt, error) {
+	log := zerolog.Ctx(ctx)
+
 	options := []core.Opt{}
 
 	if maxBits, err := flags.ParseDataCapToBitsCount(readDataCap); err != nil {
@@ -199,6 +205,10 @@ func OptsFromFlags() ([]core.Opt, error) {
 		}
 		if symbolLen > 0 && blockSize%symbolLen != 0 {
 			return nil, fmt.Errorf("entropy chunk size must be a multiple of block size")
+		}
+		if symbolLen > maxSymbolLen {
+			log.Warn().Msgf("capping symbol length from %d to %d bits", maxSymbolLen)
+			symbolLen = maxSymbolLen
 		}
 		options = append(options, core.WithStatsSymbolLen(symbolLen))
 	} else {
@@ -246,7 +256,7 @@ func process(ctx context.Context, filename string, op operation) error {
 		r = f
 	}
 
-	opts, err := OptsFromFlags()
+	opts, err := OptsFromFlags(ctx)
 	if err != nil {
 		return fmt.Errorf("error parsing input flags: %w", err)
 	}

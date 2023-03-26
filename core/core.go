@@ -138,6 +138,12 @@ func createResult(ctx context.Context, bits []types.Bit, opts ...Opt) (*types.Re
 		engineOpts = append(engineOpts, engine.WithBlockSize(c.StatsBlockSize))
 	}
 
+	log.Trace().
+		Int("statsBlockSize", c.StatsBlockSize).
+		Int("statsMaxBlockSize", c.StatsMaxBlockSize).
+		Int("statsTopK", c.StatsTopK).
+		Msg("analizing bits")
+
 	stats := engine.AnalizeBits(ctx, bits, engineOpts...)
 	stats.EntropyPlotName = c.EntropyPlotName
 
