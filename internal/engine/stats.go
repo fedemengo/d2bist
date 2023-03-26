@@ -75,7 +75,7 @@ func AnalizeBits(ctx context.Context, bits []types.Bit, opts ...Opt) *types.Stat
 		calculateEntropy = true
 		accumulators = make([]string, 1)
 		windows = []int{o.blockSize}
-		counterForLen[o.blockSize] = map[string]int{}
+		counterForLen[o.blockSize] = make(map[string]int, o.blockSize)
 	} else {
 		accumulators = make([]string, o.maxBlockSize)
 		for i := range accumulators {
@@ -131,7 +131,7 @@ func AnalizeBits(ctx context.Context, bits []types.Bit, opts ...Opt) *types.Stat
 	for i := 0; i < len(bits); i += o.blockSize {
 		nextBlockSize := min(o.blockSize, len(bits)-i)
 		chunk := bits[i : i+nextBlockSize]
-		entropy := ShannonEntropy(chunk, o.symbolLen)
+		entropy := ShannonEntropy(ctx, chunk, o.symbolLen)
 		shannon.Values = append(shannon.Values, entropy)
 	}
 

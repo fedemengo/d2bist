@@ -1,15 +1,21 @@
 package engine
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"math"
+
+	"github.com/rs/zerolog"
 
 	"github.com/fedemengo/d2bist/internal/types"
 )
 
 var ErrEndOfBits = errors.New("end of bits")
 
-func ShannonEntropy(chunk []types.Bit, symbolLen int) float64 {
+func ShannonEntropy(ctx context.Context, chunk []types.Bit, symbolLen int) float64 {
+	log := zerolog.Ctx(ctx).With().Logger()
+
 	bw := NewBitsWindow(chunk, symbolLen)
 
 	chunkLen := len(chunk)
@@ -26,16 +32,26 @@ func ShannonEntropy(chunk []types.Bit, symbolLen int) float64 {
 	// possibleSymbols := 1 << uint(symbolsInChunk) // 2^32 - all possible symbols
 	entropy := float64(0)
 	for intBitsValue := range counts {
+
 		//pX := float64(counts[intBitsValue]) / float64(possibleSymbols)
 		pX := float64(counts[intBitsValue]) / (float64(chunkLen) / float64(symbolLen))
 		e := float64(0)
 		if pX > 0 {
 			e = pX * math.Log2(pX)
 		}
+		log.Trace().
+			Uint64("value", intBitsValue).
+			Str("bitstr", fmt.Sprintf("%032b", intBitsValue)).
+			Int("count", counts[intBitsValue]).
+			Float64("pX", pX).
+			Float64("entropy", e).
+			Msg("symbol count")
+
 		entropy -= e
 	}
 
-	entropy /= float64(symbolLen)
+	// normalize the entropy in the range [0, 1]
+	entropy /= math.Log2(float64(chunkLen) / float64(symbolLen))
 
 	return entropy
 }
@@ -131,14 +147,9 @@ func (b *bitsWindow) slideToInt(exit, enter int) uint64 {
 	mask := uint64(1<<(b.windowSize-exit) - 1)
 	acc &= mask
 
-	if enter == 1 {
+	for i := b.lastEnd; i < b.end; i++ {
 		acc <<= 1
-		acc |= uint64(b.bits[b.end-1])
-	} else {
-		for i := b.lastEnd; i < b.end; i++ {
-			acc <<= 1
-			acc |= uint64(b.bits[i])
-		}
+		acc |= uint64(b.bits[i])
 	}
 
 	b.lastStart = b.start
