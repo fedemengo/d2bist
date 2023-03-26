@@ -24,6 +24,8 @@ var (
 	printStats   = false
 	topKOutput   = -1
 	maxBlockSize = 8
+	blockSize    = -1
+	symbolLen    = 2
 
 	readDataCap   = ""
 	compressionIn = ""
@@ -34,6 +36,10 @@ var (
 	pngFileName   = ""
 	separatorRune = rune(0)
 	count         = 8
+)
+
+var (
+	maxSymbolLen = 16
 )
 
 var app *cli.App
@@ -79,10 +85,18 @@ func init() {
 			Destination: &topKOutput,
 			DefaultText: "all",
 		}, &cli.IntFlag{
-			Name:        "maxblock",
-			Usage:       "max block size to consider when counting substrings",
+			Name:        "maxchunk",
+			Usage:       "max chunk size of bits consider when counting substrings",
 			Destination: &maxBlockSize,
 			DefaultText: "8",
+		}, &cli.IntFlag{
+			Name:        "chunk",
+			Usage:       "exact chunk size to consider when counting substrings",
+			Destination: &blockSize,
+		}, &cli.IntFlag{
+			Name:        "slen",
+			Usage:       "length of unitary symbol used when calculating data entropy",
+			Destination: &symbolLen,
 		}, &cli.BoolFlag{
 			Name:        "stats",
 			Aliases:     []string{"s"},
@@ -162,10 +176,10 @@ func logger() zerolog.Logger {
 		Level(level)
 }
 
-func OptsFromFlags() ([]core.Opt, error) {
-	options := []core.Opt{
-		core.WithStatsMaxBlockSize(maxBlockSize),
-	}
+func OptsFromFlags(ctx context.Context) ([]core.Opt, error) {
+	log := zerolog.Ctx(ctx)
+
+	options := []core.Opt{}
 
 	if maxBits, err := flags.ParseDataCapToBitsCount(readDataCap); err != nil {
 		return nil, fmt.Errorf("cannot parse data cap flag")
@@ -184,9 +198,28 @@ func OptsFromFlags() ([]core.Opt, error) {
 	cOutType := flags.ParseCompressionFlag(compressionOut)
 	options = append(options, core.WithOutCompression(cOutType))
 
+	if blockSize > 0 {
+		options = append(options, core.WithStatsBlockSize(blockSize))
+		if symbolLen > blockSize {
+			return nil, fmt.Errorf("entropy chunk size cannot be greater than block size")
+		}
+		if symbolLen > 0 && blockSize%symbolLen != 0 {
+			return nil, fmt.Errorf("entropy chunk size must be a multiple of block size")
+		}
+		if symbolLen > maxSymbolLen {
+			log.Warn().Msgf("capping symbol length from %d to %d bits", maxSymbolLen)
+			symbolLen = maxSymbolLen
+		}
+		options = append(options, core.WithStatsSymbolLen(symbolLen))
+	} else {
+		options = append(options, core.WithStatsMaxBlockSize(maxBlockSize))
+	}
+
 	if topKOutput > 0 {
 		options = append(options, core.WithStatsTopK(topKOutput))
 	}
+
+	options = append(options, core.WithEntropyPlotName(fmt.Sprintf("entropy-%d", time.Now().Unix())))
 
 	return options, nil
 }
@@ -223,7 +256,7 @@ func process(ctx context.Context, filename string, op operation) error {
 		r = f
 	}
 
-	opts, err := OptsFromFlags()
+	opts, err := OptsFromFlags(ctx)
 	if err != nil {
 		return fmt.Errorf("error parsing input flags: %w", err)
 	}

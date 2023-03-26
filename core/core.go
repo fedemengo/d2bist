@@ -128,11 +128,24 @@ func createResult(ctx context.Context, bits []types.Bit, opts ...Opt) (*types.Re
 		Str("outCompression", string(c.OutCompressionType)).
 		Msg("creating result")
 
-	stats := engine.AnalizeBits(
-		bits,
+	engineOpts := []engine.Opt{
 		engine.WithMaxBlockSize(c.StatsMaxBlockSize),
-		engine.WithTopK(c.StatsTopK),
-	)
+		engine.WithTopKFreq(c.StatsTopK),
+		engine.WithSymbolLen(c.StatsSymbolLen),
+	}
+
+	if c.StatsBlockSize > 0 {
+		engineOpts = append(engineOpts, engine.WithBlockSize(c.StatsBlockSize))
+	}
+
+	log.Trace().
+		Int("statsBlockSize", c.StatsBlockSize).
+		Int("statsMaxBlockSize", c.StatsMaxBlockSize).
+		Int("statsTopK", c.StatsTopK).
+		Msg("analizing bits")
+
+	stats := engine.AnalizeBits(ctx, bits, engineOpts...)
+	stats.EntropyPlotName = c.EntropyPlotName
 
 	result := &types.Result{
 		Bits:  bits,
@@ -161,7 +174,7 @@ func createResult(ctx context.Context, bits []types.Bit, opts ...Opt) (*types.Re
 	result.Stats.CompressionStats = &types.CompressionStats{
 		CompressionRatio:     100 - float64(len(compressedBits)*100)/float64(len(bits)),
 		CompressionAlgorithm: string(c.OutCompressionType),
-		Stats:                engine.AnalizeBits(compressedBits),
+		Stats:                engine.AnalizeBits(ctx, compressedBits),
 	}
 
 	return result, nil

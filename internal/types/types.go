@@ -3,8 +3,18 @@ package types
 import (
 	"errors"
 	"fmt"
+	"image"
+	"image/color"
+	"image/draw"
+	"image/png"
 	"io"
 	"math"
+	"os"
+
+	svg "github.com/ajstarks/svgo"
+	"github.com/vdobler/chart"
+	"github.com/vdobler/chart/imgg"
+	"github.com/vdobler/chart/svgg"
 
 	"github.com/fedemengo/go-data-structures/heap"
 )
@@ -33,6 +43,15 @@ type SubstrCount struct {
 	AllCounts     map[string]int
 }
 
+type Entropy struct {
+	Name   string
+	Values []float64
+}
+
+func NewShannonEntropy() *Entropy {
+	return &Entropy{Name: "Shannon"}
+}
+
 type Stats struct {
 	BitsCount int
 	ByteCount int
@@ -41,6 +60,8 @@ type Stats struct {
 	SubstrsCount []SubstrCount
 
 	CompressionStats *CompressionStats
+	EntropyPlotName  string
+	Entropy          []*Entropy
 }
 
 func (s *Stats) RenderStats(w io.Writer) {
@@ -75,6 +96,10 @@ func (s *Stats) RenderStats(w io.Writer) {
 		if l < len(s.SubstrsCount)-1 {
 			fmt.Fprintln(w)
 		}
+	}
+
+	if len(s.Entropy) > 0 {
+		renderEntropyChart(s.EntropyPlotName, s.Entropy)
 	}
 
 	if s.CompressionStats != nil {
@@ -131,6 +156,112 @@ func (s *Stats) printAllBistrK(max, total int, substrGroup SubstrCount, w io.Wri
 
 		fmt.Fprintf(w, "%s: %s - %.5f %%\n", bitStr, countStr, percentage)
 	}
+}
+
+func renderEntropyChart(plotName string, entropies []*Entropy) {
+	dumper := NewDumper(plotName, 1, 1, 1300, 800)
+	defer dumper.Close()
+
+	pl := chart.ScatterChart{Title: "data entropy"}
+	pl.Key.Pos = "itl"
+	pl.Key.Hide = true
+
+	pl.YRange.MinMode.Fixed = true
+	pl.YRange.MinMode.Value = 0
+	pl.YRange.MaxMode.Fixed = true
+	pl.YRange.MaxMode.Value = 1
+	pl.YRange.TicSetting.Delta = 0.25
+	pl.YRange.Label = "entropy"
+	pl.YRange.TicSetting.Format = func(v float64) string {
+		return fmt.Sprintf("%.2f", v)
+	}
+	pl.YRange.TicSetting.Mirror = 0
+
+	maxEntropyPoints := 0
+	for _, e := range entropies {
+		entropy := e.Values
+		if len(entropy) > maxEntropyPoints {
+			maxEntropyPoints = len(entropy)
+		}
+
+		x, y := make([]float64, len(entropy)), make([]float64, len(entropy))
+		for i, e := range entropy {
+			x[i] = float64(i)
+			y[i] = e
+		}
+
+		pl.AddDataPair(
+			e.Name,
+			x, y,
+			chart.PlotStyleLines,
+			chart.Style{
+				Symbol:      0,
+				SymbolColor: color.NRGBA{0xff, 0x00, 0x00, 0xff},
+				LineStyle:   chart.SolidLine,
+			})
+	}
+
+	pl.XRange.MinMode.Fixed = true
+	pl.XRange.MinMode.Value = 0
+	pl.XRange.MaxMode.Fixed = true
+	pl.XRange.MaxMode.Value = float64(maxEntropyPoints)
+
+	pl.XRange.TicSetting.Delta = float64(maxEntropyPoints / 5)
+	pl.XRange.TicSetting.Mirror = 0
+	pl.XRange.TicSetting.Grid = chart.GridOff
+	pl.XRange.Label = "offset"
+
+	dumper.Plot(&pl)
+}
+
+type Dumper struct {
+	N, M, W, H, Cnt  int
+	S                *svg.SVG
+	I                *image.RGBA
+	svgFile, imgFile *os.File
+}
+
+func NewDumper(name string, n, m, w, h int) *Dumper {
+	var err error
+	dumper := Dumper{N: n, M: m, W: w, H: h}
+
+	dumper.svgFile, err = os.Create(name + ".svg")
+	if err != nil {
+		panic(err)
+	}
+	dumper.S = svg.New(dumper.svgFile)
+	dumper.S.Start(n*w, m*h)
+	dumper.S.Title(name)
+	dumper.S.Rect(0, 0, n*w, m*h, "fill: #ffffff")
+
+	dumper.imgFile, err = os.Create(name + ".png")
+	if err != nil {
+		panic(err)
+	}
+	dumper.I = image.NewRGBA(image.Rect(0, 0, n*w, m*h))
+	bg := image.NewUniform(color.RGBA{0xff, 0xff, 0xff, 0xff})
+	draw.Draw(dumper.I, dumper.I.Bounds(), bg, image.ZP, draw.Src)
+
+	return &dumper
+}
+func (d *Dumper) Close() {
+	png.Encode(d.imgFile, d.I)
+	d.imgFile.Close()
+
+	d.S.End()
+	d.svgFile.Close()
+}
+
+func (d *Dumper) Plot(c chart.Chart) {
+	row, col := d.Cnt/d.N, d.Cnt%d.N
+
+	igr := imgg.AddTo(d.I, col*d.W, row*d.H, d.W, d.H, color.RGBA{0xff, 0xff, 0xff, 0xff}, nil, nil)
+	c.Plot(igr)
+
+	sgr := svgg.AddTo(d.S, col*d.W, row*d.H, d.W, d.H, "", 12, color.RGBA{0xff, 0xff, 0xff, 0xff})
+	c.Plot(sgr)
+
+	d.Cnt++
 }
 
 type CompressionStats struct {
