@@ -59,7 +59,7 @@ func shannonEntropy(ctx context.Context, chunk []types.Bit, symbolLen int) float
 	}
 
 	// normalize the entropy in the range [0, 1]
-	entropy /= float64(symbolLen)
+	entropy /= math.Log2(symbolsCount)
 
 	entropy = -entropy
 
