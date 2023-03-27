@@ -108,7 +108,7 @@ func TestShannongEntropy(t *testing.T) {
 			),
 			expectedLen:   128,
 			lenSymbol:     8,
-			expectedValue: 0.0422,
+			expectedValue: 0.0843,
 		}, {
 			name:          "analytical max test, 160 bits, 5 bit symbol",
 			bits:          flattenBits(bits32),
@@ -120,7 +120,7 @@ func TestShannongEntropy(t *testing.T) {
 			bits:          []types.Bit{0, 0, 0, 0, 0, 1, 0, 1, 1},
 			expectedLen:   9,
 			lenSymbol:     3,
-			expectedValue: 0.529,
+			expectedValue: 1,
 		}, {
 			name:          "analytical max test, 24 bits, 3 bit symbol",
 			bits:          []types.Bit{0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1},
@@ -139,9 +139,10 @@ func TestShannongEntropy(t *testing.T) {
 			assert := assert.New(t)
 			assert.Equal(tc.expectedLen, len(tc.bits))
 
-			e := engine.ShannonEntropy(ctx, tc.bits, tc.lenSymbol)
+			e := engine.ShannonEntropy(ctx, tc.bits, len(tc.bits), tc.lenSymbol)
+			require.Len(t, e.Values, 1)
 
-			assert.LessOrEqualf(math.Abs(tc.expectedValue-e), 1e-3, "expected %.4f got %.4f", tc.expectedValue, e)
+			assert.LessOrEqualf(math.Abs(tc.expectedValue-e.Values[0]), 1e-3, "expected %.4f got %.4f", tc.expectedValue, e.Values[0])
 		})
 	}
 }
