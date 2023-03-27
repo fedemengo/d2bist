@@ -1,7 +1,7 @@
 package core
 
 import (
-	"github.com/fedemengo/d2bist/compression"
+	"github.com/fedemengo/d2bist/pkg/compression"
 )
 
 type Config struct {

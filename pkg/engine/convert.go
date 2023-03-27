@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/fedemengo/d2bist/internal/types"
+	"github.com/fedemengo/d2bist/pkg/types"
 )
 
 // BitsToByte convers 8 bits to a byte, treating bits as follow

@@ -9,8 +9,8 @@ import (
 
 	"github.com/rs/zerolog"
 
-	"github.com/fedemengo/d2bist/internal/engine"
-	"github.com/fedemengo/d2bist/internal/types"
+	"github.com/fedemengo/d2bist/pkg/engine"
+	"github.com/fedemengo/d2bist/pkg/types"
 )
 
 func BitsFromBinStrReaderWithCap(ctx context.Context, r io.Reader, maxBits int) ([]types.Bit, error) {

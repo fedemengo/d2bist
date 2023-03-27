@@ -6,9 +6,10 @@ import (
 	"io"
 	"strings"
 
-	"github.com/fedemengo/d2bist/internal/engine"
-	"github.com/fedemengo/d2bist/internal/types"
 	"github.com/rs/zerolog"
+
+	"github.com/fedemengo/d2bist/pkg/engine"
+	"github.com/fedemengo/d2bist/pkg/types"
 )
 
 func bitToRune(b types.Bit) rune {

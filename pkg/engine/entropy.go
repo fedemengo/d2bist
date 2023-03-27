@@ -8,7 +8,7 @@ import (
 
 	"github.com/rs/zerolog"
 
-	"github.com/fedemengo/d2bist/internal/types"
+	"github.com/fedemengo/d2bist/pkg/types"
 )
 
 var ErrEndOfBits = errors.New("end of bits")

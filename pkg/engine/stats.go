@@ -8,7 +8,7 @@ import (
 
 	"github.com/fedemengo/go-data-structures/heap"
 
-	"github.com/fedemengo/d2bist/internal/types"
+	"github.com/fedemengo/d2bist/pkg/types"
 )
 
 const (

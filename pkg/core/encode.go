@@ -4,8 +4,9 @@ import (
 	"context"
 	"io"
 
-	"github.com/fedemengo/d2bist/internal/types"
 	"github.com/rs/zerolog"
+
+	"github.com/fedemengo/d2bist/pkg/types"
 )
 
 // Encode receives a bit string in a io.Reader and creates a Result

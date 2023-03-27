@@ -8,7 +8,7 @@ import (
 	"math"
 	"os"
 
-	"github.com/fedemengo/d2bist/internal/types"
+	"github.com/fedemengo/d2bist/pkg/types"
 )
 
 const (

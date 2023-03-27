@@ -3,8 +3,9 @@ package engine
 import (
 	"testing"
 
-	"github.com/fedemengo/d2bist/internal/types"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/fedemengo/d2bist/pkg/types"
 )
 
 func TestIntBitsToByte(t *testing.T) {

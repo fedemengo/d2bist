@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"unicode"
 
-	"github.com/fedemengo/d2bist/compression"
+	"github.com/fedemengo/d2bist/pkg/compression"
 )
 
 var (

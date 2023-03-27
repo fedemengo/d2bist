@@ -12,11 +12,11 @@ import (
 	zlog "github.com/rs/zerolog/log"
 	"github.com/urfave/cli/v2"
 
-	"github.com/fedemengo/d2bist/core"
-	"github.com/fedemengo/d2bist/internal/flags"
-	"github.com/fedemengo/d2bist/internal/image"
-	iio "github.com/fedemengo/d2bist/internal/io"
-	"github.com/fedemengo/d2bist/internal/types"
+	"github.com/fedemengo/d2bist/pkg/core"
+	"github.com/fedemengo/d2bist/pkg/flags"
+	"github.com/fedemengo/d2bist/pkg/image"
+	iio "github.com/fedemengo/d2bist/pkg/io"
+	"github.com/fedemengo/d2bist/pkg/types"
 )
 
 var (
