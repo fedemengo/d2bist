@@ -115,7 +115,7 @@ func BitsFromReader(ctx context.Context, r io.Reader, opts ...opt) ([]types.Bit,
 			bitsArray, err := c.transform(b)
 			//fmt.Printf("%v `%c`\n", bitsArray, b)
 			if errors.Is(err, types.ErrInvalidBit) {
-				log.Error().Err(err).Msgf("invalid byte to bits: %v", b)
+				log.Warn().Err(err).Msgf("invalid byte to bits: %v", b)
 				continue
 			} else if err != nil {
 				log.Error().Err(err).Msgf("cannot convert byte to bits: %v", b)
@@ -135,7 +135,7 @@ func BitsFromReader(ctx context.Context, r io.Reader, opts ...opt) ([]types.Bit,
 		for _, b := range bytes[:lastCount] {
 			bitsArray, err := c.transform(b)
 			if errors.Is(err, types.ErrInvalidBit) {
-				log.Error().Err(err).Msgf("invalid byte to bits: %v", b)
+				log.Warn().Err(err).Msgf("invalid byte to bits: %v", b)
 			} else if err != nil {
 				return nil, fmt.Errorf("error when parsing remaining data: %w", err)
 			} else {

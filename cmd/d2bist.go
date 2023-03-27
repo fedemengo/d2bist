@@ -152,7 +152,7 @@ func Run() {
 }
 
 func logger() zerolog.Logger {
-	level := zerolog.Disabled
+	level := zerolog.ErrorLevel
 	switch l := os.Getenv("LOG_LEVEL"); l {
 	case "trace":
 		level = zerolog.TraceLevel

@@ -2,7 +2,6 @@ package engine
 
 import (
 	"context"
-	"fmt"
 	"sort"
 
 	"github.com/rs/zerolog"
@@ -130,8 +129,13 @@ func AnalizeBits(ctx context.Context, bits []types.Bit, opts ...Opt) *types.Stat
 		strAllCount := map[string]int{}
 		strTopKSelected := map[string]int{}
 		strSubstrs := []string{}
+
 		for substr, count := range counterForLen[windowSize] {
-			s := fmt.Sprintf("%0*b", windowSize, substr)
+			s, err := IntToBitString(substr, windowSize)
+			if err != nil {
+				log.Fatal().Err(err).Msg("error converting int to bit string")
+			}
+
 			strSubstrs = append(strSubstrs, s)
 			strAllCount[s] = count
 			if _, ok := topKSelected[substr]; ok {

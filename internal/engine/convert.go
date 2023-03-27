@@ -2,6 +2,7 @@ package engine
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/fedemengo/d2bist/internal/types"
 )
@@ -41,7 +42,7 @@ func BitsToInt(bits []types.Bit) (uint64, error) {
 }
 
 func IntToBits(n uint64, bitsCount int) ([]types.Bit, error) {
-	if n >= 1<<bitsCount {
+	if n > 0 && int(math.Log2(float64(n))) > bitsCount {
 		return nil, fmt.Errorf("number %d cannot be represented in %d bits", n, bitsCount)
 	}
 
@@ -52,6 +53,15 @@ func IntToBits(n uint64, bitsCount int) ([]types.Bit, error) {
 	}
 
 	return bits, nil
+}
+
+func IntToBitString(n uint64, bitsCount int) (string, error) {
+	bits, err := IntToBits(n, bitsCount)
+	if err != nil {
+		return "", err
+	}
+
+	return BitsToStringN(bits, bitsCount), nil
 }
 
 func ByteToBits(b byte) [8]types.Bit {
@@ -76,6 +86,20 @@ func ByteToBit(b byte) (types.Bit, error) {
 	default:
 		return 0, fmt.Errorf("cannot handle `%c`: %w", b, types.ErrInvalidBit)
 	}
+}
+
+func BitsToStringN(bits []types.Bit, n int) string {
+	if n < len(bits) {
+		n = len(bits)
+	}
+
+	s := make([]byte, n)
+	start := n - len(bits)
+	for i, b := range bits {
+		s[start+i] = b.ToByte()
+	}
+
+	return string(s)
 }
 
 func BitsToString(bits []types.Bit) string {
