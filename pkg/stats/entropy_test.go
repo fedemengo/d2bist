@@ -1,4 +1,4 @@
-package engine_test
+package stats_test
 
 import (
 	"context"
@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/fedemengo/d2bist/pkg/engine"
+	"github.com/fedemengo/d2bist/pkg/stats"
 	"github.com/fedemengo/d2bist/pkg/types"
 )
 
@@ -139,7 +140,7 @@ func TestShannongEntropy(t *testing.T) {
 			assert := assert.New(t)
 			assert.Equal(tc.expectedLen, len(tc.bits))
 
-			e := engine.ShannonEntropy(ctx, tc.bits, len(tc.bits), tc.lenSymbol)
+			e := stats.ShannonEntropy(ctx, tc.bits, len(tc.bits), tc.lenSymbol)
 			require.Len(t, e.Values, 1)
 
 			assert.LessOrEqualf(math.Abs(tc.expectedValue-e.Values[0]), 1e-3, "expected %.4f got %.4f", tc.expectedValue, e.Values[0])

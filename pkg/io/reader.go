@@ -1,6 +1,7 @@
 package io
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/rs/zerolog"
 
+	"github.com/fedemengo/d2bist/pkg/compression"
 	"github.com/fedemengo/d2bist/pkg/engine"
 	"github.com/fedemengo/d2bist/pkg/types"
 )
@@ -149,5 +151,38 @@ func BitsFromReader(ctx context.Context, r io.Reader, opts ...opt) ([]types.Bit,
 	}
 
 	return bits, nil
+}
 
+func BitsToReader(ctx context.Context, bits []types.Bit, compType compression.CompressionType) (ReaderWithSize, error) {
+	log := zerolog.Ctx(ctx).
+		With().
+		Str("compression", string(compType)).
+		Logger()
+
+	log.Trace().
+		Msg("creating writer with compression")
+	buf := new(bytes.Buffer)
+	cw, err := compression.NewCompressedWriter(ctx, buf, compType)
+	if err != nil {
+		return nil, fmt.Errorf("cannot get compressed writer: %w", err)
+	}
+
+	log.Trace().
+		Msg("writing bits to comp writer")
+	if err := BitsToByteWriter(ctx, cw, bits); err != nil {
+		return nil, fmt.Errorf("cannot compress bits")
+	}
+
+	if err := cw.Close(); err != nil {
+		return nil, fmt.Errorf("error when closing writer: %w", err)
+	}
+
+	log.Trace().
+		Int("bufLen", buf.Len()).
+		Int("bits", 8*buf.Len()).
+		Msg("bytes written to compression writer")
+
+	cr := bytes.NewReader(buf.Bytes())
+
+	return NewReaderWithSize(cr, buf.Len()), nil
 }

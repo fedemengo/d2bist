@@ -1,4 +1,4 @@
-package engine
+package stats
 
 import (
 	"context"
@@ -8,6 +8,8 @@ import (
 
 	"github.com/fedemengo/go-data-structures/heap"
 
+	"github.com/fedemengo/d2bist/pkg/compression"
+	"github.com/fedemengo/d2bist/pkg/engine"
 	"github.com/fedemengo/d2bist/pkg/types"
 )
 
@@ -131,7 +133,7 @@ func AnalizeBits(ctx context.Context, bits []types.Bit, opts ...Opt) *types.Stat
 		strSubstrs := []string{}
 
 		for substr, count := range counterForLen[windowSize] {
-			s, err := IntToBitString(substr, windowSize)
+			s, err := engine.IntToBitString(substr, windowSize)
 			if err != nil {
 				log.Fatal().Err(err).Msg("error converting int to bit string")
 			}
@@ -164,6 +166,8 @@ func AnalizeBits(ctx context.Context, bits []types.Bit, opts ...Opt) *types.Stat
 
 	stats.Entropy = append(
 		stats.Entropy,
+		CompressionEntropy(ctx, bits, o.blockSize, o.symbolLen, compression.Gzip),
+		CompressionEntropy(ctx, bits, o.blockSize, o.symbolLen, compression.Brotli),
 		ShannonEntropy(ctx, bits, o.blockSize, o.symbolLen),
 	)
 
