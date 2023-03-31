@@ -34,6 +34,7 @@ var (
 	compressionOut = ""
 
 	pngFileName   = ""
+	pixelLen      = 1
 	separatorRune = rune(0)
 	count         = 8
 )
@@ -56,6 +57,11 @@ func init() {
 			Name:        "png",
 			Usage:       "write bit string to png file",
 			Destination: &pngFileName,
+		}, &cli.IntFlag{
+			Name:        "plen",
+			Usage:       "length of a pixel in bits",
+			DefaultText: "1",
+			Destination: &pixelLen,
 		}, &cli.StringFlag{
 			Name:        "sep",
 			Usage:       "separator to make the bin string more readable",
@@ -268,7 +274,10 @@ func process(ctx context.Context, filename string, op operation) error {
 	}
 
 	if len(pngFileName) > 0 {
-		return image.WriteToPNG(res.Bits, pngFileName)
+		if pixelLen == 0 {
+			pixelLen = 1
+		}
+		return image.WriteToPNG(res.Bits, pngFileName, pixelLen)
 	}
 
 	return nil
