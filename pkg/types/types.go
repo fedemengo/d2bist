@@ -12,10 +12,8 @@ import (
 	"math"
 	"os"
 
-	svg "github.com/ajstarks/svgo"
 	"github.com/vdobler/chart"
 	"github.com/vdobler/chart/imgg"
-	"github.com/vdobler/chart/svgg"
 
 	"github.com/fedemengo/d2bist/pkg/compression"
 	"github.com/fedemengo/go-data-structures/heap"
@@ -240,24 +238,15 @@ func renderEntropyChart(plotName string, entropies []*Entropy) {
 }
 
 type Dumper struct {
-	N, M, W, H, Cnt  int
-	S                *svg.SVG
-	I                *image.RGBA
-	svgFile, imgFile *os.File
+	N, M, W, H int
+	Cnt        int
+	I          *image.RGBA
+	imgFile    *os.File
 }
 
 func NewDumper(name string, n, m, w, h int) *Dumper {
 	var err error
 	dumper := Dumper{N: n, M: m, W: w, H: h}
-
-	dumper.svgFile, err = os.Create(name + ".svg")
-	if err != nil {
-		panic(err)
-	}
-	dumper.S = svg.New(dumper.svgFile)
-	dumper.S.Start(n*w, m*h)
-	dumper.S.Title(name)
-	dumper.S.Rect(0, 0, n*w, m*h, "fill: #ffffff")
 
 	dumper.imgFile, err = os.Create(name + ".png")
 	if err != nil {
@@ -272,9 +261,6 @@ func NewDumper(name string, n, m, w, h int) *Dumper {
 func (d *Dumper) Close() {
 	png.Encode(d.imgFile, d.I)
 	d.imgFile.Close()
-
-	d.S.End()
-	d.svgFile.Close()
 }
 
 func (d *Dumper) Plot(c chart.Chart) {
@@ -282,9 +268,6 @@ func (d *Dumper) Plot(c chart.Chart) {
 
 	igr := imgg.AddTo(d.I, col*d.W, row*d.H, d.W, d.H, color.RGBA{0xff, 0xff, 0xff, 0xff}, nil, nil)
 	c.Plot(igr)
-
-	sgr := svgg.AddTo(d.S, col*d.W, row*d.H, d.W, d.H, "", 12, color.RGBA{0xff, 0xff, 0xff, 0xff})
-	c.Plot(sgr)
 
 	d.Cnt++
 }
