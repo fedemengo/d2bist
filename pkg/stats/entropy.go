@@ -67,6 +67,7 @@ func shannonEntropy(ctx context.Context, chunk []types.Bit, symbolLen int) float
 
 	return entropy
 }
+
 func CompressionEntropy(ctx context.Context, bits []types.Bit, chunkSize, _ int, cType compression.CompressionType) *types.Entropy {
 	compr := types.NewCompressionEntropy(cType)
 
@@ -87,5 +88,4 @@ func CompressionEntropy(ctx context.Context, bits []types.Bit, chunkSize, _ int,
 	}
 
 	return compr
-
 }

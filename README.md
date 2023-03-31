@@ -43,5 +43,10 @@ Plot the entropy of PI calculated on chunks of 65536 bits with symbols of 64 bit
 
 <img src="./examples/images/entropy-pi-65536-64.png" alt="text" width="500"/>
 
+Plot the entropy of `d2bist` calculated on chunks of 40960 bits with symbols of 4096 bits
+
+<img src="./examples/images/entropy-d2bist-40960-4096.png" alt="text" width="500"/>
+
+
 Checkout other usage [examples](https://github.com/fedemengo/d2bist/tree/main/examples)
 
