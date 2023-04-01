@@ -1,11 +1,14 @@
 package engine
 
 import (
+	"errors"
 	"fmt"
 	"math"
 
 	"github.com/fedemengo/d2bist/pkg/types"
 )
+
+var ErrEndOfBits = errors.New("end of bits")
 
 // BitsToByte convers 8 bits to a byte, treating bits as follow
 //

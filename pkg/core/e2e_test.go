@@ -22,7 +22,7 @@ type op func(context.Context, io.Reader, ...Opt) (*types.Result, error)
 type converter func(*types.Result) (io.Reader, error)
 
 func basicConverter(res *types.Result) (io.Reader, error) {
-	r, err := bitsToReader(context.Background(), res.Bits, compression.None)
+	r, err := iio.BitsToReader(context.Background(), res.Bits, compression.None)
 	return r, err
 }
 
@@ -244,5 +244,4 @@ func TestE2E(t *testing.T) {
 			a.Equal(tc.expectedData, data)
 		})
 	}
-
 }

@@ -1,7 +1,6 @@
 package core
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -9,8 +8,8 @@ import (
 	"github.com/rs/zerolog"
 
 	"github.com/fedemengo/d2bist/pkg/compression"
-	"github.com/fedemengo/d2bist/pkg/engine"
 	iio "github.com/fedemengo/d2bist/pkg/io"
+	"github.com/fedemengo/d2bist/pkg/stats"
 	"github.com/fedemengo/d2bist/pkg/types"
 )
 
@@ -38,7 +37,7 @@ func binStrReaderToBits(ctx context.Context, r io.Reader, opts ...Opt) ([]types.
 			Msg("bits requires decompression")
 
 		// convert compressed bits to byte reader (of compressed data), no additional compression
-		r, err := bitsToReader(ctx, bits, compression.None)
+		r, err := iio.BitsToReader(ctx, bits, compression.None)
 		if err != nil {
 			return nil, err
 		}
@@ -81,40 +80,6 @@ func readerToBits(ctx context.Context, r io.Reader, opts ...Opt) ([]types.Bit, e
 	return bits, nil
 }
 
-func bitsToReader(ctx context.Context, bits []types.Bit, compType compression.CompressionType) (iio.ReaderWithSize, error) {
-	log := zerolog.Ctx(ctx).
-		With().
-		Str("compression", string(compType)).
-		Logger()
-
-	log.Trace().
-		Msg("creating writer with compression")
-	buf := new(bytes.Buffer)
-	cw, err := compression.NewCompressedWriter(ctx, buf, compType)
-	if err != nil {
-		return nil, fmt.Errorf("cannot get compressed writer: %w", err)
-	}
-
-	log.Trace().
-		Msg("writing bits to comp writer")
-	if err := iio.BitsToByteWriter(ctx, cw, bits); err != nil {
-		return nil, fmt.Errorf("cannot compress bits")
-	}
-
-	if err := cw.Close(); err != nil {
-		return nil, fmt.Errorf("error when closing writer: %w", err)
-	}
-
-	log.Trace().
-		Int("bufLen", buf.Len()).
-		Int("bits", 8*buf.Len()).
-		Msg("bytes written to compression writer")
-
-	cr := bytes.NewReader(buf.Bytes())
-
-	return iio.NewReaderWithSize(cr, buf.Len()), nil
-}
-
 func createResult(ctx context.Context, bits []types.Bit, opts ...Opt) (*types.Result, error) {
 	log := zerolog.Ctx(ctx)
 
@@ -128,14 +93,14 @@ func createResult(ctx context.Context, bits []types.Bit, opts ...Opt) (*types.Re
 		Str("outCompression", string(c.OutCompressionType)).
 		Msg("creating result")
 
-	engineOpts := []engine.Opt{
-		engine.WithMaxBlockSize(c.StatsMaxBlockSize),
-		engine.WithTopKFreq(c.StatsTopK),
-		engine.WithSymbolLen(c.StatsSymbolLen),
+	statsOpts := []stats.Opt{
+		stats.WithMaxBlockSize(c.StatsMaxBlockSize),
+		stats.WithTopKFreq(c.StatsTopK),
+		stats.WithSymbolLen(c.StatsSymbolLen),
 	}
 
 	if c.StatsBlockSize > 0 {
-		engineOpts = append(engineOpts, engine.WithBlockSize(c.StatsBlockSize))
+		statsOpts = append(statsOpts, stats.WithBlockSize(c.StatsBlockSize))
 	}
 
 	log.Trace().
@@ -144,12 +109,12 @@ func createResult(ctx context.Context, bits []types.Bit, opts ...Opt) (*types.Re
 		Int("statsTopK", c.StatsTopK).
 		Msg("analizing bits")
 
-	stats := engine.AnalizeBits(ctx, bits, engineOpts...)
-	stats.EntropyPlotName = c.EntropyPlotName
+	bitsStats := stats.AnalizeBits(ctx, bits, statsOpts...)
+	bitsStats.EntropyPlotName = c.EntropyPlotName
 
 	result := &types.Result{
 		Bits:  bits,
-		Stats: stats,
+		Stats: bitsStats,
 	}
 
 	if c.OutCompressionType == compression.None {
@@ -158,7 +123,7 @@ func createResult(ctx context.Context, bits []types.Bit, opts ...Opt) (*types.Re
 
 	log.Trace().Msg("output requires compression")
 
-	cr, err := bitsToReader(ctx, bits, c.OutCompressionType)
+	cr, err := iio.BitsToReader(ctx, bits, c.OutCompressionType)
 	if err != nil {
 		return nil, fmt.Errorf("cannot write bytes to compressed reader: %w", err)
 	}
@@ -174,7 +139,7 @@ func createResult(ctx context.Context, bits []types.Bit, opts ...Opt) (*types.Re
 	result.Stats.CompressionStats = &types.CompressionStats{
 		CompressionRatio:     100 - float64(len(compressedBits)*100)/float64(len(bits)),
 		CompressionAlgorithm: string(c.OutCompressionType),
-		Stats:                engine.AnalizeBits(ctx, compressedBits),
+		Stats:                stats.AnalizeBits(ctx, compressedBits),
 	}
 
 	return result, nil

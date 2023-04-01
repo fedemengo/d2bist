@@ -8,18 +8,28 @@ import (
 	"image/draw"
 	"image/png"
 	"io"
+	"log"
 	"math"
 	"os"
 
-	svg "github.com/ajstarks/svgo"
 	"github.com/vdobler/chart"
 	"github.com/vdobler/chart/imgg"
-	"github.com/vdobler/chart/svgg"
 
+	"github.com/fedemengo/d2bist/pkg/compression"
 	"github.com/fedemengo/go-data-structures/heap"
 )
 
 var ErrInvalidBit = errors.New("invalid bit")
+
+type EntropyType string
+
+const (
+	ShannonEntropy = EntropyType("Shannon")
+	GzipEntropy    = EntropyType(compression.Gzip)
+	BrotliEntropy  = EntropyType(compression.Brotli)
+	S2Entropy      = EntropyType(compression.S2)
+	ZstdEntropy    = EntropyType(compression.Zstd)
+)
 
 type Bit uint8
 
@@ -44,12 +54,16 @@ type SubstrCount struct {
 }
 
 type Entropy struct {
-	Name   string
+	Name   EntropyType
 	Values []float64
 }
 
 func NewShannonEntropy() *Entropy {
-	return &Entropy{Name: "Shannon"}
+	return &Entropy{Name: ShannonEntropy}
+}
+
+func NewCompressionEntropy(cType compression.CompressionType) *Entropy {
+	return &Entropy{Name: EntropyType(cType)}
 }
 
 type Stats struct {
@@ -158,13 +172,17 @@ func (s *Stats) printAllBistrK(max, total int, substrGroup SubstrCount, w io.Wri
 	}
 }
 
+var colorsMap = map[EntropyType]color.RGBA{
+	ShannonEntropy: {R: 255, G: 0, B: 0, A: 255},
+	GzipEntropy:    {R: 0, G: 0, B: 255, A: 255},
+	BrotliEntropy:  {R: 0, G: 255, B: 0, A: 255},
+}
+
 func renderEntropyChart(plotName string, entropies []*Entropy) {
 	dumper := NewDumper(plotName, 1, 1, 1300, 800)
 	defer dumper.Close()
 
 	pl := chart.ScatterChart{Title: "data entropy"}
-	pl.Key.Pos = "itl"
-	pl.Key.Hide = true
 
 	pl.YRange.MinMode.Fixed = true
 	pl.YRange.MinMode.Value = 0
@@ -179,7 +197,9 @@ func renderEntropyChart(plotName string, entropies []*Entropy) {
 
 	maxEntropyPoints := 0
 	for _, e := range entropies {
+		log.Printf("entropy: %s, len: %d", e.Name, len(e.Values))
 		entropy := e.Values
+
 		if len(entropy) > maxEntropyPoints {
 			maxEntropyPoints = len(entropy)
 		}
@@ -191,15 +211,18 @@ func renderEntropyChart(plotName string, entropies []*Entropy) {
 		}
 
 		pl.AddDataPair(
-			e.Name,
+			string(e.Name),
 			x, y,
 			chart.PlotStyleLines,
 			chart.Style{
 				Symbol:      0,
-				SymbolColor: color.NRGBA{0xff, 0x00, 0x00, 0xff},
+				SymbolColor: colorsMap[e.Name],
 				LineStyle:   chart.SolidLine,
 			})
 	}
+
+	pl.Key.Pos = "obr"
+	pl.Key.Cols = maxEntropyPoints
 
 	pl.XRange.MinMode.Fixed = true
 	pl.XRange.MinMode.Value = 0
@@ -215,24 +238,15 @@ func renderEntropyChart(plotName string, entropies []*Entropy) {
 }
 
 type Dumper struct {
-	N, M, W, H, Cnt  int
-	S                *svg.SVG
-	I                *image.RGBA
-	svgFile, imgFile *os.File
+	N, M, W, H int
+	Cnt        int
+	I          *image.RGBA
+	imgFile    *os.File
 }
 
 func NewDumper(name string, n, m, w, h int) *Dumper {
 	var err error
 	dumper := Dumper{N: n, M: m, W: w, H: h}
-
-	dumper.svgFile, err = os.Create(name + ".svg")
-	if err != nil {
-		panic(err)
-	}
-	dumper.S = svg.New(dumper.svgFile)
-	dumper.S.Start(n*w, m*h)
-	dumper.S.Title(name)
-	dumper.S.Rect(0, 0, n*w, m*h, "fill: #ffffff")
 
 	dumper.imgFile, err = os.Create(name + ".png")
 	if err != nil {
@@ -247,9 +261,6 @@ func NewDumper(name string, n, m, w, h int) *Dumper {
 func (d *Dumper) Close() {
 	png.Encode(d.imgFile, d.I)
 	d.imgFile.Close()
-
-	d.S.End()
-	d.svgFile.Close()
 }
 
 func (d *Dumper) Plot(c chart.Chart) {
@@ -257,9 +268,6 @@ func (d *Dumper) Plot(c chart.Chart) {
 
 	igr := imgg.AddTo(d.I, col*d.W, row*d.H, d.W, d.H, color.RGBA{0xff, 0xff, 0xff, 0xff}, nil, nil)
 	c.Plot(igr)
-
-	sgr := svgg.AddTo(d.S, col*d.W, row*d.H, d.W, d.H, "", 12, color.RGBA{0xff, 0xff, 0xff, 0xff})
-	c.Plot(sgr)
 
 	d.Cnt++
 }
