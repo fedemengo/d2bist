@@ -1,18 +1,16 @@
 package main
 
 import (
+	"os"
+
 	"github.com/fedemengo/d2bist/cmd"
+	"github.com/pkg/profile"
 )
 
 func main() {
-
-	//p := profile.New(
-	//	profile.CPUProfile,
-	//	profile.MemProfile,
-	//	profile.TraceProfile,
-	//)
-
-	//defer p.Start().Stop()
+	if os.Getenv("PROFILE") == "true" {
+		defer profile.Start().Stop()
+	}
 
 	cmd.Run()
 }

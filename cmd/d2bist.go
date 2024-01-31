@@ -9,7 +9,6 @@ import (
 
 	"github.com/mattn/go-isatty"
 	"github.com/rs/zerolog"
-	zlog "github.com/rs/zerolog/log"
 	"github.com/urfave/cli/v2"
 
 	"github.com/fedemengo/d2bist/pkg/core"
@@ -150,20 +149,20 @@ func init() {
 }
 
 func Run() {
-	zlog.Logger = zlog.Output(zerolog.ConsoleWriter{Out: os.Stderr})
-	if err := app.Run(os.Args); err != nil {
-		zlog.Fatal().Err(err).Msg("execution failed")
+	log := logger()
+	ctx := log.WithContext(context.Background())
+
+	if err := app.RunContext(ctx, os.Args); err != nil {
+		log.Fatal().Err(err).Msg("execution failed")
 		os.Exit(1)
 	}
 }
 
 func logger() zerolog.Logger {
 	level := zerolog.ErrorLevel
-	switch l := os.Getenv("LOG_LEVEL"); l {
-	case "trace":
-		level = zerolog.TraceLevel
-	case "error":
-		level = zerolog.ErrorLevel
+	l, err := zerolog.ParseLevel(os.Getenv("LOG_LEVEL"))
+	if err == nil {
+		level = l
 	}
 
 	logWriter := zerolog.ConsoleWriter{
@@ -224,16 +223,16 @@ type operation func(context.Context, io.Reader, ...core.Opt) (*types.Result, err
 
 // decode read data and decodes it to the binary string
 func decode(cliCtx *cli.Context) error {
-	log := logger()
-	ctx := log.WithContext(context.Background())
+	log := zerolog.Ctx(cliCtx.Context).With().Str("command", "decode").Logger()
+	ctx := log.WithContext(cliCtx.Context)
 
 	return process(ctx, cliCtx.Args().First(), core.Decode)
 }
 
 // encode read a binary string and encodes it to the equivalent data
 func encode(cliCtx *cli.Context) error {
-	log := logger()
-	ctx := log.WithContext(context.Background())
+	log := zerolog.Ctx(cliCtx.Context).With().Str("command", "encode").Logger()
+	ctx := log.WithContext(cliCtx.Context)
 
 	return process(ctx, cliCtx.Args().First(), core.Encode)
 }

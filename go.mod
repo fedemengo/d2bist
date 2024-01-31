@@ -7,6 +7,7 @@ require (
 	github.com/fedemengo/go-data-structures v0.0.0-20180922000948-80ff6179d6c9
 	github.com/klauspost/compress v1.15.13
 	github.com/mattn/go-isatty v0.0.17
+	github.com/pkg/profile v1.7.0
 	github.com/rs/zerolog v1.28.0
 	github.com/stretchr/testify v1.8.1
 	github.com/urfave/cli/v2 v2.23.7
@@ -16,7 +17,9 @@ require (
 require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/felixge/fgprof v0.9.3 // indirect
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
+	github.com/google/pprof v0.0.0-20211214055906-6f57359322fd // indirect
 	github.com/llgcode/draw2d v0.0.0-20180825133448-f52c8a71aff0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
