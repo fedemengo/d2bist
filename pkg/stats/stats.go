@@ -16,6 +16,7 @@ import (
 const (
 	defaultTopK         = 10
 	defaultMaxBlockSize = 8
+	defaultSymbolLen    = 2
 )
 
 type analysisOpt struct {
@@ -61,6 +62,7 @@ func AnalizeBits(ctx context.Context, bits []types.Bit, opts ...Opt) *types.Stat
 		topKFreq:     defaultTopK,
 		maxBlockSize: defaultMaxBlockSize,
 		blockSize:    -1,
+		symbolLen:    defaultSymbolLen,
 	}
 
 	for _, opt := range opts {
@@ -91,9 +93,10 @@ func AnalizeBits(ctx context.Context, bits []types.Bit, opts ...Opt) *types.Stat
 		}
 	}
 
-	log.Trace().
+	log.Info().
 		Ints("windows", windows).
 		Bool("entropyCalc", calculateEntropy).
+		Int("symbolLen", o.symbolLen).
 		Msg("counting bit strings")
 
 	// count all bit strings of length windowSize
@@ -168,6 +171,7 @@ func AnalizeBits(ctx context.Context, bits []types.Bit, opts ...Opt) *types.Stat
 		stats.Entropy,
 		CompressionEntropy(ctx, bits, o.blockSize, o.symbolLen, compression.Gzip),
 		CompressionEntropy(ctx, bits, o.blockSize, o.symbolLen, compression.Brotli),
+		CompressionEntropy(ctx, bits, o.blockSize, o.symbolLen, compression.Bzip2),
 		ShannonEntropy(ctx, bits, o.blockSize, o.symbolLen),
 	)
 

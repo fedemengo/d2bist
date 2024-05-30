@@ -29,6 +29,7 @@ const (
 	BrotliEntropy  = EntropyType(compression.Brotli)
 	S2Entropy      = EntropyType(compression.S2)
 	ZstdEntropy    = EntropyType(compression.Zstd)
+	Bzip2Entropy   = EntropyType(compression.Bzip2)
 )
 
 type Bit uint8
@@ -125,7 +126,6 @@ compression algorithm: %s
 	} else {
 		fmt.Fprintln(w)
 	}
-
 }
 
 func (s *Stats) printTopBistrK(max, total int, substrGroup SubstrCount, w io.Writer) {
@@ -176,6 +176,7 @@ var colorsMap = map[EntropyType]color.RGBA{
 	ShannonEntropy: {R: 255, G: 0, B: 0, A: 255},
 	GzipEntropy:    {R: 0, G: 0, B: 255, A: 255},
 	BrotliEntropy:  {R: 0, G: 255, B: 0, A: 255},
+	Bzip2Entropy:   {R: 255, G: 165, B: 0, A: 1},
 }
 
 func renderEntropyChart(plotName string, entropies []*Entropy) {
@@ -258,6 +259,7 @@ func NewDumper(name string, n, m, w, h int) *Dumper {
 
 	return &dumper
 }
+
 func (d *Dumper) Close() {
 	png.Encode(d.imgFile, d.I)
 	d.imgFile.Close()

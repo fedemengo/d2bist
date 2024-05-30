@@ -88,9 +88,10 @@ func createResult(ctx context.Context, bits []types.Bit, opts ...Opt) (*types.Re
 		opt(c)
 	}
 
-	log.Trace().
+	log.Debug().
 		Int("outBitsCap", c.OutMaxBits).
 		Str("outCompression", string(c.OutCompressionType)).
+		Int("symbolLen", c.StatsSymbolLen).
 		Msg("creating result")
 
 	statsOpts := []stats.Opt{

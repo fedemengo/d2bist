@@ -31,6 +31,7 @@ func shannonEntropy(ctx context.Context, chunk []types.Bit, symbolLen int) float
 	bw := engine.NewBitsWindow(chunk, symbolLen)
 
 	chunkLen := len(chunk)
+	log.Debug().Int("chunkLen", chunkLen).Int("symbolLen", symbolLen).Msg("calculating entropy")
 	counts := make(map[uint64]int, len(chunk)/symbolLen)
 	for i := 0; i < chunkLen; i += symbolLen {
 		bitsInt := bw.ToInt()

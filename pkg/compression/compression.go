@@ -8,15 +8,14 @@ import (
 	"io"
 
 	"github.com/andybalholm/brotli"
+	"github.com/dsnet/compress/bzip2"
 	"github.com/klauspost/compress/flate"
 	"github.com/klauspost/compress/s2"
 	"github.com/klauspost/compress/zstd"
 	"github.com/rs/zerolog"
 )
 
-var (
-	ErrAlgorithmNotImplemented = errors.New("algorithm not implemented")
-)
+var ErrAlgorithmNotImplemented = errors.New("algorithm not implemented")
 
 type CompressionType string
 
@@ -28,6 +27,7 @@ const (
 	Zstd   = CompressionType("Zstd")
 	S2     = CompressionType("S2")
 	Huff   = CompressionType("Huff")
+	Bzip2  = CompressionType("Bzip2")
 )
 
 func NewCompressedReader(ctx context.Context, r io.Reader, cType CompressionType) (io.Reader, error) {
@@ -54,6 +54,9 @@ func NewCompressedReader(ctx context.Context, r io.Reader, cType CompressionType
 	case Huff:
 		log.Trace().Msg("huffman compression")
 		return nil, fmt.Errorf("huffman not implemented: %w", ErrAlgorithmNotImplemented)
+	case Bzip2:
+		log.Trace().Msg("bzip2 compression")
+		return bzip2.NewReader(r, nil)
 	default:
 		return nil, fmt.Errorf("compression type  %T not supported", cType)
 	}
@@ -99,6 +102,9 @@ func NewCompressedWriter(ctx context.Context, w io.Writer, cType CompressionType
 	case Huff:
 		log.Trace().Msg("huffman compression")
 		return nil, fmt.Errorf("huffman not implemented: %w", ErrAlgorithmNotImplemented)
+	case Bzip2:
+		log.Trace().Msg("bzip2 compression")
+		return bzip2.NewWriter(w, &bzip2.WriterConfig{Level: bzip2.BestCompression})
 	default:
 		return nil, fmt.Errorf("compression type  %T not supported", cType)
 	}

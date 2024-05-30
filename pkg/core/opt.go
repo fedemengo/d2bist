@@ -29,6 +29,8 @@ func NewDefaultConfig() *Config {
 
 		StatsMaxBlockSize: 8,
 		StatsTopK:         -1,
+
+		StatsSymbolLen: 2,
 	}
 }
 

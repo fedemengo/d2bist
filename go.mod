@@ -4,6 +4,7 @@ go 1.19
 
 require (
 	github.com/andybalholm/brotli v1.0.4
+	github.com/dsnet/compress v0.0.1
 	github.com/fedemengo/go-data-structures v0.0.0-20180922000948-80ff6179d6c9
 	github.com/klauspost/compress v1.15.13
 	github.com/mattn/go-isatty v0.0.17
